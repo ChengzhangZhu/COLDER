@@ -68,18 +68,16 @@ class SocialGraph:
         for i, user in enumerate(users):  # user_name --> user_id
             if user not in self.user:
                 self.user[user] = index
-                self.node_u[user] = list()
+                self.node_u[index] = list()
                 index += 1
-            users[i] = self.user[user]
 
         index = 0
         for i, item in enumerate(items):  # item_name --> item_id
             if item not in self.item:
                 self.item[item] = index
-                self.node_i[item] = list()
+                self.node_i[index] = list()
                 index += 1
-            items[i] = self.item[item]
-        
+
         # Stage 3. Build Graph
         for i in range(len(users)):
             user = users[i]
