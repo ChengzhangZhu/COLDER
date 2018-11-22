@@ -16,3 +16,5 @@ This package is wrote by `python` with `Tensorflow`.
 ## Dependent Packages
 + tensorflow
 + numpy
++ pandas
++ re
