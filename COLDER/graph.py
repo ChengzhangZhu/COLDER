@@ -62,6 +62,7 @@ class SocialGraph:
         self.edge = dict()   # edge dictionary, (user_id, item_id) --> edge weight
         self.review = dict()  # review dictionary, (user_id, item_id) --> review content
         self.rating = dict()  # rating dictionary, (user_id, item_id) --> rating
+        self.label = dict()   # label dictionary, (user_id, item_id) --> label
 
     def build(self, filename):
 
@@ -87,6 +88,17 @@ class SocialGraph:
             reviews = data.review.get_values()
         except:
             reviews = data.reviewContent.get_values()
+
+        try:  # load label
+            labels = data.label.get_values()
+        except:
+            labels = data.flagged.get_values()
+            for i, l in enumerate(labels):
+                if l == 'N' or l == 'NR':
+                    labels[i] = -1
+                else:
+                    labels[i] = 1
+        labels = [int(float(i)) for i in labels]
 
         ratings = data.rating.get_values()  # load rating
         ratings = [int(float(i)) for i in ratings]
@@ -122,6 +134,7 @@ class SocialGraph:
                 self.edge[(user_id, item_id)] = 0
             self.review[(user_id, item_id)] = reviews[i]
             self.rating[(user_id, item_id)] = ratings[i]
+            self.label[(user_id, item_id)] = labels[i]
             self.edge[(user_id, item_id)] += 1
 
     def split(self):
