@@ -5,21 +5,62 @@ Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
 
-from .graph import SocialGraph, Graph
+from graph import SocialGraph, Graph
+import numpy as np
 
-def random_walk(g=Graph()):
-    walk_path = None
+
+def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15):  # epoch determines the number of walks
+    """
+
+    :param g: Graph class
+    :param minT: the minimum number of walk start from a node
+    :param maxT: the maximum number of walk start from a node
+    :param p: the stop probability of at each step
+    :return: walk path
+    """
+    nodes = g.node.keys()  # the node list
+    centrality = list()  # the centrality of each node, here use degree centrality
+    total_degree = 0
+    for node in nodes:
+        degree = g.degree[node]
+        total_degree += np.exp(degree)
+        centrality.append(np.exp(degree))
+    centrality = np.asarray(centrality)*1.0/total_degree
+    walk_path = []  # walking path
+    for i, node in enumerate(nodes):
+        t = np.max([centrality[i]*maxT, minT])  # the number of walk for a node
+        for step in range(int(t)):
+            walk_path.append(weighted_random_walk(g, node, p))
     return walk_path
 
 
-def social_implicit_context_generator(g=SocialGraph()):
-    social_context = {'user_context':[], 'item_context':[]}
+def weighted_random_walk(g=Graph(), node=0, p=0.15):  # random work with stop probability
+    walk_path = [node]
+    walk = True
+    while walk:
+        candidate = g.node[walk_path[-1]]
+        walk_prob = []
+        total_weight = 0
+        for n in candidate:  # calculate the probability of the next node
+            walk_prob.append(g.edge[(walk_path[-1],n)])
+            total_weight += g.edge[(walk_path[-1],n)]
+        walk_prob = np.asarray(walk_prob)*1.0/total_weight
+        n = np.random.choice(candidate,p=walk_prob)
+        walk_path.append(n)
+        if np.random.rand() < p:
+            walk = False
+    return walk_path
+
+
+def social_implicit_context_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15):
+    social_context = dict()
     # Stage 1. Split social graph into user-user and item-item graphs
     user_graph, item_graph = g.split()
 
     # Stage 2. Random walk in user-user graph
-
+    social_context['user_context'] = weighted_random_walk_generator(user_graph, minT=minT, maxT=maxT, p=p)
 
     # Stage 3. Random walk in item-item graph
+    social_context['item_graph'] = weighted_random_walk_generator(item_graph, minT=minT, maxT=maxT, p=p)
 
     return social_context

@@ -40,9 +40,11 @@ class Graph:
                 self.degree[n2] = 0
             if (n1,n2) not in self.edge:
                 self.edge[(n1,n2)] = 0
+                self.edge[(n2,n1)] = 0
             self.node[n1].append(n2)
             self.node[n2].append(n1)
             self.edge[(n1,n2)] += w
+            self.edge[(n2,n1)] += w
             self.degree[n1] += w
             self.degree[n2] += w
 
@@ -152,6 +154,7 @@ class SocialGraph:
 
         return user_graph, item_graph
 
-graph = SocialGraph()
-graph.build('/data/qli1/Experiment/Qian/Fraud Detection/Yelp Shibuti Datasets/Data/yelp_Zip_data.csv')
-user_graph, item_graph = graph.split()
+# # For test
+# graph = SocialGraph()
+# graph.build('/data/qli1/Experiment/Qian/Fraud Detection/Yelp Shibuti Datasets/Data/yelp_Zip_data.csv')
+# user_graph, item_graph = graph.split()
