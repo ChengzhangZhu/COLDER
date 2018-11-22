@@ -18,3 +18,4 @@ This package is wrote by `python` with `Tensorflow`.
 + numpy
 + pandas
 + re
++ tqdm

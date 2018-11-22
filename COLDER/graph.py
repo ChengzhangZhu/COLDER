@@ -7,7 +7,7 @@ Date: 2018-11-22
 
 import pandas as pd
 import re
-
+from tqdm import tqdm
 
 def clean_str(string):
     try:
@@ -22,11 +22,39 @@ def clean_str(string):
     return str(string).strip().lower()
 
 
+class Graph:
+    def __init__(self):
+        self.node = dict()  # node dictionary, node i --> node j
+        self.edge = dict()  # edge dictionary, (node i, node j) --> edge weight
+        self.degree = dict()  # node degree dictionary, node --> degree
+
+    def build(self, triplets):
+        print('Graph building...')
+        for triplet in tqdm(triplets):
+            n1, n2, w = triplet
+            if n1 not in self.node:
+                self.node[n1] = []
+                self.degree[n1] = 0
+            if n2 not in self.node:
+                self.node[n2] = []
+                self.degree[n2] = 0
+            if (n1,n2) not in self.edge:
+                self.edge[(n1,n2)] = 0
+            self.node[n1].append(n2)
+            self.node[n2].append(n1)
+            self.edge[(n1,n2)] += w
+            self.degree[n1] += w
+            self.degree[n2] += w
+
+
+
 class SocialGraph:
 
     def __init__(self):
         self.user = dict()  # user dictionary, user_name --> user_id
         self.item = dict()  # item dictionary, item_name --> item_id
+        self.user_reverse = dict()  # user reverse dictionary, user_id --> user_name
+        self.item_reverse = dict()  # item reverse dictionary, item_id --> item_name
         self.node_u = dict()  # user node dictionary, user_id --> item_id_list (connected to the user)
         self.node_i = dict()  # item node dictionary, item_id --> user_id_list (connected to the item)
         self.edge = dict()   # edge dictionary, (user_id, item_id) --> edge weight
@@ -68,6 +96,7 @@ class SocialGraph:
         for i, user in enumerate(users):  # user_name --> user_id
             if user not in self.user:
                 self.user[user] = index
+                self.user_reverse[index] = user
                 self.node_u[index] = list()
                 index += 1
 
@@ -75,6 +104,7 @@ class SocialGraph:
         for i, item in enumerate(items):  # item_name --> item_id
             if item not in self.item:
                 self.item[item] = index
+                self.item_reverse[index] = item
                 self.node_i[index] = list()
                 index += 1
 
@@ -91,3 +121,37 @@ class SocialGraph:
             self.review[(user_id, item_id)] = reviews[i]
             self.rating[(user_id, item_id)] = ratings[i]
             self.edge[(user_id, item_id)] += 1
+
+    def split(self):
+        user_graph = Graph()
+        item_graph = Graph()
+
+        # Generate user graph
+        print('User graph generating...')
+        user_triplets = list()
+        for user in tqdm(self.node_u):
+            items = self.node_u[user]
+            for item in items:
+                users = self.node_i[item]
+                for u in users:
+                    user_triplets.append((user, u, 1))
+        user_graph.build(user_triplets)
+        print('Finished!')
+
+        # Generate item graph
+        print('Item graph generating...')
+        item_triplets = list()
+        for item in tqdm(self.node_i):
+            users = self.node_i[item]
+            for user in users:
+                items = self.node_u[user]
+                for i in items:
+                    item_triplets.append((item, i, 1))
+        item_graph.build(item_triplets)
+        print('Finished!')
+
+        return user_graph, item_graph
+
+graph = SocialGraph()
+graph.build('/data/qli1/Experiment/Qian/Fraud Detection/Yelp Shibuti Datasets/Data/yelp_Zip_data.csv')
+user_graph, item_graph = graph.split()
