@@ -7,7 +7,7 @@ Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
 
-from context_generator import social_implicit_context_generator
+from context_generator import social_implicit_context_generator, path2context
 from graph import SocialGraph
 import numpy as np
 import pickle
@@ -38,17 +38,23 @@ def negative_sampling_prob(g=SocialGraph(), context=None):
         user_sample_prob[i] = user_sample_prob[i]*1.0/user_total
     for i in item_sample_prob:
         item_sample_prob[i] = item_sample_prob[i]*1.0/item_total
-    return user_sample_prob, item_sample_prob
+    return user_sample_prob.values(), item_sample_prob.values()
 
 
 def negative_sample(sets, conflicts, p=None):
-    while True:
+    complete = False
+    for i in sets:
+        if i not in conflicts:
+            complete = True
+            break
+    while complete:
         if p is None:
             sample = np.random.choice(sets)
         else:
             sample = np.random.choice(sets,p=p)
         if sample not in conflicts:
             return sample
+    return None
 
 
 def shuffle_samples(samples):
@@ -64,10 +70,12 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
     samples = {'user1':[], 'item1':[], 'review1':[], 'rating1':[], 'label1':[], 'context_u':[], 'success1':[],
                'user2':[], 'item2':[], 'review2':[], 'rating2':[], 'label2':[], 'context_i':[], 'success2':[]}
     context = social_implicit_context_generator(g, minT=minT, maxT=maxT, p=p, max_length=max_length)
-    user_context = context['user_context']
-    item_context = context['item_context']
+    print('Transfer random path to context...')
+    user_context = path2context(g.node_u.keys(), context['user_context'])
+    item_context = path2context(g.node_i.keys(), context['item_context'])
     user_nodes = g.node_u.keys()  # the user id
     item_nodes = g.node_i.keys()  # the item id
+    print('Calculate negative sampling probability...')
     user_sample_prob, item_sample_prob = negative_sampling_prob(g, context)
     # Generate user samples
     print('Generate user samples')
@@ -103,14 +111,18 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                samples['context'].append(1)
+                samples['context_u'].append(1)
                 negative_item = negative_sample(sets=item_nodes, conflicts=other_items)
+                if negative_item is None:
+                    negative_item = np.random.choice(item_nodes)
+                    samples['success2'].append(1)
+                else:
+                    samples['success2'].append(0)
                 samples['user2'].append(other_user)
                 samples['item2'].append(negative_item)
                 samples['review2'].append(np.random.choice(g.review.values()))
                 samples['rating2'].append(np.random.choice(g.rating.values()))
                 samples['label2'].append(np.random.choice(g.label.values()))
-                samples['success2'].append(0)
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
                 else:
@@ -123,8 +135,14 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                samples['context'].append(0)
                 negative_user = negative_sample(sets=user_nodes, conflicts=user_context[user], p=user_sample_prob)
+                if negative_user is None:
+                    negative_user = np.random.choice(user_nodes)
+                    samples['context_u'].append(1)
+                    samples['context_u'].append(1)
+                else:
+                    samples['context_u'].append(0)
+                    samples['context_u'].append(0)
                 other_items = g.node_u[negative_user]
                 other_item = np.random.choice(other_items)
                 samples['user2'].append(negative_user)
@@ -144,14 +162,17 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                samples['context'].append(0)
                 negative_item = negative_sample(sets=item_nodes, conflicts=other_items)
+                if negative_item is None:
+                    negative_item = np.random.choice(item_nodes)
+                    samples['success2'].append(1)
+                else:
+                    samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
                 samples['review2'].append(np.random.choice(g.review.values()))
                 samples['rating2'].append(np.random.choice(g.rating.values()))
                 samples['label2'].append(np.random.choice(g.label.values()))
-                samples['success2'].append(0)
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
                 else:
@@ -192,12 +213,16 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['success1'].append(1)
                 samples['context_i'].append(1)
                 negative_user = negative_sample(sets=user_nodes, conflicts=other_users)
+                if negative_user is None:
+                    negative_user = np.random.choice(user_nodes)
+                    samples['success2'].append(1)
+                else:
+                    samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(item)
                 samples['review2'].append(np.random.choice(g.review.values()))
                 samples['rating2'].append(np.random.choice(g.rating.values()))
                 samples['label2'].append(np.random.choice(g.label.values()))
-                samples['success2'].append(0)
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
                 else:
@@ -210,8 +235,14 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                samples['context_i'].append(0)
                 negative_item = negative_sample(sets=item_nodes, conflicts=item_context[item], p=item_sample_prob)
+                if negative_item is None:
+                    negative_item = np.random.choice(item_nodes)
+                    samples['context_i'].append(1)
+                    samples['context_i'].append(1)
+                else:
+                    samples['context_i'].append(0)
+                    samples['context_i'].append(0)
                 other_users = g.node_i[negative_item]
                 other_user = np.random.choice(other_users)
                 samples['user2'].append(other_user)
@@ -231,14 +262,17 @@ def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                samples['context_i'].append(0)
                 negative_user = negative_sample(sets=user_nodes, conflicts=other_users)
+                if negative_user is None:
+                    negative_user = np.random.choice(user_nodes)
+                    samples['success2'].append(1)
+                else:
+                    samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
                 samples['review2'].append(np.random.choice(g.review.values()))
                 samples['rating2'].append(np.random.choice(g.rating.values()))
                 samples['label2'].append(np.random.choice(g.label.values()))
-                samples['success2'].append(0)
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
                 else:
@@ -268,6 +302,7 @@ def main():
     print('Construct Samples')
     samples = sample_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
     pickle.dump(samples,open(args.save_name,'wb'))
+
 
 if __name__ == "__main__":
     main()

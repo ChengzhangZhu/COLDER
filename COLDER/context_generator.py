@@ -76,11 +76,9 @@ def social_implicit_context_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, 
     # Stage 2. Random walk in user-user graph
     print('Random walk in user-user graph')
     user_path = weighted_random_walk_generator(user_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
-    print('Generate user context')
-    social_context['user_context'] = path2context(g.node_u.keys(), user_path)
+    social_context['user_context'] = user_path
     # Stage 3. Random walk in item-item graph
     print('Random walk in item-item graph')
     item_path = weighted_random_walk_generator(item_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
-    print('Generate item context')
-    social_context['item_context'] = path2context(g.node_i.keys(), item_path)
+    social_context['item_context'] = item_path
     return social_context
