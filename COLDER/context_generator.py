@@ -20,12 +20,16 @@ def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_lengt
     :return: walk path
     """
     nodes = g.node.keys()  # the node list
+    degree = list()  # record the degree of nodes
     centrality = list()  # the centrality of each node, here use degree centrality
     total_degree = 0
     for node in nodes:
         degree = g.degree[node]
-        total_degree += np.exp(degree)
-        centrality.append(np.exp(degree))
+    degree = np.asarray(degree)
+    degree = (degree - np.min(degree))/(np.max(degree) - np.min(degree))  # normalize the degree to avoid overflow in exp
+    for i in range(nodes):
+        total_degree += np.exp(degree[i])
+        centrality.append(np.exp(degree[i]))
     centrality = np.asarray(centrality)*1.0/total_degree
     walk_path = []  # walking path
     for i, node in tqdm(enumerate(nodes)):
