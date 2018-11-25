@@ -254,7 +254,10 @@ parser.add_argument('--maxT', default=32, help='Set the maximun walk for each no
                     dest='maxT', type=int)
 parser.add_argument('--max_length', default=5, help='Set the maximun walk length, default is 5',
                     dest='max_length', type=int)
-parser.add_argument('--save_name', default='samples.pkl', help='Set the save name of the generated samples, default is samples.pkl', dest='save_name', type=str)
+parser.add_argument('--p', default=0.15, help='Set the walk stop probability at each step, default is 0.15',
+                    dest='p', type=float)
+parser.add_argument('--save_name', default='samples.pkl', help='Set the save name of the generated samples,'
+                                                               'default is samples.pkl', dest='save_name', type=str)
 args = parser.parse_args()
 
 
