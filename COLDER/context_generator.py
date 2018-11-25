@@ -7,9 +7,10 @@ Date: 2018-11-22
 
 from graph import SocialGraph, Graph
 import numpy as np
+from tqdm import tqdm
 
 
-def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15):  # epoch determines the number of walks
+def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_length=5):  # epoch determines the number of walks
     """
 
     :param g: Graph class
@@ -27,14 +28,14 @@ def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15):  # epoch
         centrality.append(np.exp(degree))
     centrality = np.asarray(centrality)*1.0/total_degree
     walk_path = []  # walking path
-    for i, node in enumerate(nodes):
+    for i, node in tqdm(enumerate(nodes)):
         t = np.max([centrality[i]*maxT, minT])  # the number of walk for a node
         for step in range(int(t)):
-            walk_path.append(weighted_random_walk(g, node, p))
+            walk_path.append(weighted_random_walk(g, node, p, max_length))
     return walk_path
 
 
-def weighted_random_walk(g=Graph(), node=0, p=0.15):  # random work with stop probability
+def weighted_random_walk(g=Graph(), node=0, p=0.15, max_length=5):  # random work with stop probability and max length (window size of context)
     walk_path = [node]
     walk = True
     while walk:
@@ -47,20 +48,39 @@ def weighted_random_walk(g=Graph(), node=0, p=0.15):  # random work with stop pr
         walk_prob = np.asarray(walk_prob)*1.0/total_weight
         n = np.random.choice(candidate,p=walk_prob)
         walk_path.append(n)
-        if np.random.rand() < p:
+        if np.random.rand() < p or len(walk_path) == max_length:
             walk = False
     return walk_path
 
 
-def social_implicit_context_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15):
+def path2context(nodes, walk_path):
+    context = dict()
+    for node in nodes:
+        context[node] = []
+    for path in tqdm(walk_path):
+        context_nodes = np.unique(path)
+        for node in context_nodes:
+            for c_node in context_nodes:
+                if c_node is not node:
+                    context[node].append(c_node)
+    for node in nodes:
+        context[node] = np.unique(context[node])
+    return context
+
+
+def social_implicit_context_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
     social_context = dict()
     # Stage 1. Split social graph into user-user and item-item graphs
     user_graph, item_graph = g.split()
 
     # Stage 2. Random walk in user-user graph
-    social_context['user_context'] = weighted_random_walk_generator(user_graph, minT=minT, maxT=maxT, p=p)
-
+    print('Random walk in user-user graph')
+    user_path = weighted_random_walk_generator(user_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
+    print('Generate user context')
+    social_context['user_context'] = path2context(g.node_u.keys(), user_path)
     # Stage 3. Random walk in item-item graph
-    social_context['item_context'] = weighted_random_walk_generator(item_graph, minT=minT, maxT=maxT, p=p)
-
+    print('Random walk in item-item graph')
+    item_path = weighted_random_walk_generator(item_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
+    print('Generate item context')
+    social_context['item_context'] = path2context(g.node_i.keys(), item_path)
     return social_context
