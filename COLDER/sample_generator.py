@@ -259,7 +259,12 @@ args = parser.parse_args()
 
 
 def main():
+    print('Constrcut Graph')
     graph = SocialGraph()
     graph.build(args.data_sets)
+    print('Construct Samples')
     samples = sample_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
     pickle.dump(samples,open(args.save_name,'wb'))
+
+if __name__ == "__main__":
+    main()
