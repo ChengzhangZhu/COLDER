@@ -7,7 +7,7 @@ Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
 
-from context_generator import social_implicit_context_generator, path2context
+from context_generator import social_implicit_path_generator, path2context
 from graph import SocialGraph
 import numpy as np
 import pickle
@@ -15,15 +15,15 @@ from tqdm import tqdm
 import argparse
 
 
-def negative_sampling_prob(g=SocialGraph(), context=None):
+def negative_sampling_prob(g=SocialGraph(), random_path=None):
     init_u = np.zeros(len(g.node_u))
     init_i = np.zeros(len(g.node_i))
     users = g.node_u.keys()
     items = g.node_i.keys()
     user_sample_prob = dict(zip(users,init_u))
     item_sample_prob = dict(zip(items,init_i))
-    user_context = context['user_context']
-    item_context = context['item_context']
+    user_context = random_path['user_path']
+    item_context = random_path['item_path']
     user_total = 0
     item_total = 0
     for c in user_context:
@@ -66,17 +66,16 @@ def shuffle_samples(samples):
     return samples
 
 
-def sample_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
+def sample_generator(g=SocialGraph(), random_path=None):
     samples = {'user1':[], 'item1':[], 'review1':[], 'rating1':[], 'label1':[], 'context_u':[], 'success1':[],
                'user2':[], 'item2':[], 'review2':[], 'rating2':[], 'label2':[], 'context_i':[], 'success2':[]}
-    context = social_implicit_context_generator(g, minT=minT, maxT=maxT, p=p, max_length=max_length)
     print('Transfer random path to context...')
-    user_context = path2context(g.node_u.keys(), context['user_context'])
-    item_context = path2context(g.node_i.keys(), context['item_context'])
+    user_context = path2context(g.node_u.keys(), random_path['user_path'])
+    item_context = path2context(g.node_i.keys(), random_path['item_path'])
     user_nodes = g.node_u.keys()  # the user id
     item_nodes = g.node_i.keys()  # the item id
     print('Calculate negative sampling probability...')
-    user_sample_prob, item_sample_prob = negative_sampling_prob(g, context)
+    user_sample_prob, item_sample_prob = negative_sampling_prob(g, random_path)
     # Generate user samples
     print('Generate user samples')
     for user in tqdm(user_nodes):
@@ -290,18 +289,24 @@ parser.add_argument('--max_length', default=5, help='Set the maximun walk length
                     dest='max_length', type=int)
 parser.add_argument('--p', default=0.15, help='Set the walk stop probability at each step, default is 0.15',
                     dest='p', type=float)
-parser.add_argument('--save_name', default='samples.pkl', help='Set the save name of the generated samples,'
-                                                               'default is samples.pkl', dest='save_name', type=str)
+parser.add_argument('--save_name', default='Zip', help='Set the save name of the generated samples,'
+                                                               'default is Zip', dest='save_name', type=str)
 args = parser.parse_args()
 
 
 def main():
-    print('Constrcut Graph')
+    print('Building Graph...')
     graph = SocialGraph()
     graph.build(args.data_sets)
-    print('Construct Samples')
-    samples = sample_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
-    pickle.dump(samples,open(args.save_name,'wb'))
+    print('Saving Graph...')
+    pickle.dump(graph, open('{}_graph.pkl'.format(args.save_name),'wb'))
+    print('Generating Random Path...')
+    random_path = social_implicit_path_generator(g, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
+    print('Saving Random Path...')
+    pickle.dump(random_path, open('{}_path.pkl'.format(args.save_name),'wb'))
+    print('Construct Samples...')
+    samples = sample_generator(graph, random_path)
+    pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
 
 
 if __name__ == "__main__":

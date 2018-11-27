@@ -72,17 +72,17 @@ def path2context(nodes, walk_path):
     return context
 
 
-def social_implicit_context_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
-    social_context = dict()
+def social_implicit_path_generator(g=SocialGraph(), minT=1, maxT=32, p=0.15, max_length=5):
+    random_path = dict()
     # Stage 1. Split social graph into user-user and item-item graphs
     user_graph, item_graph = g.split()
 
     # Stage 2. Random walk in user-user graph
     print('Random walk in user-user graph')
     user_path = weighted_random_walk_generator(user_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
-    social_context['user_context'] = user_path
+    random_path['user_path'] = user_path
     # Stage 3. Random walk in item-item graph
     print('Random walk in item-item graph')
     item_path = weighted_random_walk_generator(item_graph, minT=minT, maxT=maxT, p=p, max_length=max_length)
-    social_context['item_context'] = item_path
-    return social_context
+    random_path['item_path'] = item_path
+    return random_path
