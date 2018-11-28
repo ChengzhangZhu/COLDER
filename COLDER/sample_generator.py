@@ -293,7 +293,7 @@ parser.add_argument('--save_name', default='Zip', help='Set the save name of the
 args = parser.parse_args()
 
 
-## For test
+# ## For test
 # print('Building Graph...')
 # graph = SocialGraph()
 # graph.build('test.csv')

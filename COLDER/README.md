@@ -12,9 +12,11 @@ This package is wrote by `python` with `Tensorflow`.
 + `sample_generator.py`: training sample generation via negative sampling
 + `train.py`: training
 + `prediction.py`: prediction
++ `COLDER.py`: define the COLDER architecture
 
 ## Dependent Packages
 + tensorflow
++ keras
 + numpy
 + pandas
 + re

@@ -8,34 +8,6 @@ Date: 2018-11-22
 from graph import SocialGraph, Graph
 import numpy as np
 from tqdm import tqdm
-from multiprocessing import Pool, cpu_count
-from functools import partial
-
-
-def weighted_random_walk(g=Graph(), node=0, p=0.15, max_length=5):  # random work with stop probability and max length (window size of context)
-    walk_path = [node]
-    walk = True
-    while walk:
-        candidate = g.node[walk_path[-1]]
-        walk_prob = []
-        total_weight = 0
-        for n in candidate:  # calculate the probability of the next node
-            walk_prob.append(g.edge[(walk_path[-1],n)])
-            total_weight += g.edge[(walk_path[-1],n)]
-        walk_prob = np.asarray(walk_prob)*1.0/total_weight
-        n = np.random.choice(candidate,p=walk_prob)
-        walk_path.append(n)
-        if np.random.rand() < p or len(walk_path) == max_length:
-            walk = False
-    return walk_path
-
-
-def multi_weighted_random_walk(index, g=Graph(), nodes=None, centrality=None, maxT=32, minT=1, p=0.15, max_length=5):  # wrap for multiprocessing
-    t = np.max([centrality[index] * maxT, minT])  # the number of walk for a node
-    walk_path = []
-    for step in range(int(t)):
-        walk_path.append(weighted_random_walk(g, nodes[index], p, max_length))
-    return walk_path
 
 
 def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_length=5):  # epoch determines the number of walks
@@ -60,11 +32,29 @@ def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_lengt
         centrality.append(np.exp(degree[i]))
     centrality = np.asarray(centrality)*1.0/total_degree
     walk_path = []  # walking path
-    cores = cpu_count()
-    pool = Pool(processes=cores)
-    p_weighted_random_walk = partial(multi_weighted_random_walk, g=g, nodes=nodes, centrality=centrality, maxT=maxT, minT=minT, p=p, max_length=max_length)  # wrap the parameters
-    for path_ in tqdm(pool.imap_unordered(p_weighted_random_walk, range(len(nodes)))):
-        walk_path += path_
+    for i, node in tqdm(enumerate(nodes)):
+        t = np.max([centrality[i] * maxT, minT])  # the number of walk for a node
+        for step in range(int(t)):
+            walk_path.append(weighted_random_walk(g, node, p, max_length))
+    return walk_path
+
+
+def weighted_random_walk(g=Graph(), node=0, p=0.15,
+                         max_length=5):  # random work with stop probability and max length (window size of context)
+    walk_path = [node]
+    walk = True
+    while walk:
+        candidate = g.node[walk_path[-1]]
+        walk_prob = []
+        total_weight = 0
+        for n in candidate:  # calculate the probability of the next node
+            walk_prob.append(g.edge[(walk_path[-1], n)])
+            total_weight += g.edge[(walk_path[-1], n)]
+        walk_prob = np.asarray(walk_prob) * 1.0 / total_weight
+        n = np.random.choice(candidate, p=walk_prob)
+        walk_path.append(n)
+        if np.random.rand() < p or len(walk_path) == max_length:
+            walk = False
     return walk_path
 
 
