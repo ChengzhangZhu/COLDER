@@ -301,7 +301,7 @@ def main():
     print('Saving Graph...')
     pickle.dump(graph, open('{}_graph.pkl'.format(args.save_name),'wb'))
     print('Generating Random Path...')
-    random_path = social_implicit_path_generator(g, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
+    random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
     print('Saving Random Path...')
     pickle.dump(random_path, open('{}_path.pkl'.format(args.save_name),'wb'))
     print('Construct Samples...')

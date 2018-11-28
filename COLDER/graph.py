@@ -49,7 +49,6 @@ class Graph:
             self.degree[n2] += w
 
 
-
 class SocialGraph:
 
     def __init__(self):
