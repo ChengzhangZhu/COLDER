@@ -6,7 +6,6 @@ Subsampling Frequent Data + Negative Sampling
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
-
 from context_generator import social_implicit_path_generator, path2context
 from graph import SocialGraph
 import numpy as np
@@ -293,20 +292,34 @@ parser.add_argument('--save_name', default='Zip', help='Set the save name of the
                                                                'default is Zip', dest='save_name', type=str)
 args = parser.parse_args()
 
+print('Building Graph...')
+graph = SocialGraph()
+graph.build('test.csv')
+print('Saving Graph...')
+pickle.dump(graph, open('{}_graph.pkl'.format('test'),'wb'))
+print('Generating Random Path...')
+random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
+print('Saving Random Path...')
+pickle.dump(random_path, open('{}_path.pkl'.format('test'),'wb'))
+print('Construct Samples...')
+samples = sample_generator(graph, random_path)
+pickle.dump(samples,open('{}_sample.pkl'.format('test'),'wb'))
+
 
 def main():
-    print('Building Graph...')
-    graph = SocialGraph()
-    graph.build(args.data_sets)
-    print('Saving Graph...')
-    pickle.dump(graph, open('{}_graph.pkl'.format(args.save_name),'wb'))
-    print('Generating Random Path...')
-    random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
-    print('Saving Random Path...')
-    pickle.dump(random_path, open('{}_path.pkl'.format(args.save_name),'wb'))
-    print('Construct Samples...')
-    samples = sample_generator(graph, random_path)
-    pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
+    # print('Building Graph...')
+    # graph = SocialGraph()
+    # graph.build(args.data_sets)
+    # print('Saving Graph...')
+    # pickle.dump(graph, open('{}_graph.pkl'.format(args.save_name),'wb'))
+    # print('Generating Random Path...')
+    # random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
+    # print('Saving Random Path...')
+    # pickle.dump(random_path, open('{}_path.pkl'.format(args.save_name),'wb'))
+    # print('Construct Samples...')
+    # samples = sample_generator(graph, random_path)
+    # pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
+    return None
 
 
 if __name__ == "__main__":

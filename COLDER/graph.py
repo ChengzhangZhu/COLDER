@@ -4,7 +4,6 @@ This code defines a social graph class, and is to build social graph from a soci
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
-
 import pandas as pd
 import re
 from tqdm import tqdm
