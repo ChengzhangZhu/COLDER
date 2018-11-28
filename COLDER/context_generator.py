@@ -8,6 +8,11 @@ Date: 2018-11-22
 from graph import SocialGraph, Graph
 import numpy as np
 from tqdm import tqdm
+from multiprocessing import Pool, cpu_count
+from functools import partial
+
+cores = cpu_count()
+pool = Pool(processes=cores)
 
 
 def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_length=5):  # epoch determines the number of walks
@@ -32,10 +37,17 @@ def weighted_random_walk_generator(g=Graph(), minT=1, maxT=32, p=0.15, max_lengt
         centrality.append(np.exp(degree[i]))
     centrality = np.asarray(centrality)*1.0/total_degree
     walk_path = []  # walking path
-    for i, node in tqdm(enumerate(nodes)):
-        t = np.max([centrality[i]*maxT, minT])  # the number of walk for a node
-        for step in range(int(t)):
-            walk_path.append(weighted_random_walk(g, node, p, max_length))
+    p_weighted_random_walk = partial(multi_weighted_random_walk, g=Graph(), nodes=nodes, centrality=centrality, maxT=maxT, minT=minT, p=p, max_length=max_length)  # wrap the parameters
+    for path_ in tqdm(pool.imap_unordered(p_weighted_random_walk, range(len(nodes)))):
+        walk_path += path_
+    return walk_path
+
+
+def multi_weighted_random_walk(index, g=Graph(), nodes=None, centrality=None, maxT=32, minT=1, p=0.15, max_length=5):  # wrap for multiprocessing
+    t = np.max([centrality[index] * maxT, minT])  # the number of walk for a node
+    walk_path = []
+    for step in range(int(t)):
+        walk_path.append(weighted_random_walk(g, nodes[index], p, max_length))
     return walk_path
 
 

@@ -31,23 +31,25 @@ class Graph:
     def build(self, triplets):
         print('Graph building...')
         for triplet in tqdm(triplets):
-            n1, n2, w = triplet
-            if n1 not in self.node:
-                self.node[n1] = []
-                self.degree[n1] = 0
-            if n2 not in self.node:
-                self.node[n2] = []
-                self.degree[n2] = 0
-            if (n1,n2) not in self.edge:
-                self.edge[(n1,n2)] = 0
-                self.edge[(n2,n1)] = 0
-            self.node[n1].append(n2)
-            self.node[n2].append(n1)
-            self.edge[(n1,n2)] += w
-            self.edge[(n2,n1)] += w
-            self.degree[n1] += w
-            self.degree[n2] += w
+            self.transform_triplet(triplet)
 
+    def transform_triplet(self, triplet):
+        n1, n2, w = triplet
+        if n1 not in self.node:
+            self.node[n1] = []
+            self.degree[n1] = 0
+        if n2 not in self.node:
+            self.node[n2] = []
+            self.degree[n2] = 0
+        if (n1, n2) not in self.edge:
+            self.edge[(n1, n2)] = 0
+            self.edge[(n2, n1)] = 0
+        self.node[n1].append(n2)
+        self.node[n2].append(n1)
+        self.edge[(n1, n2)] += w
+        self.edge[(n2, n1)] += w
+        self.degree[n1] += w
+        self.degree[n2] += w
 
 class SocialGraph:
 
