@@ -66,7 +66,7 @@ def path2context(nodes, walk_path):
         context_nodes = np.unique(path)
         for node in context_nodes:
             for c_node in context_nodes:
-                if c_node is not node:
+                if c_node != node:
                     context[node].append(c_node)
     for node in nodes:
         context[node] = np.unique(context[node])
