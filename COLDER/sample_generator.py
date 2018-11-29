@@ -76,6 +76,8 @@ def sample_generator(g=SocialGraph(), random_path=None):
     print('Calculate negative sampling probability...')
     user_sample_prob, item_sample_prob = negative_sampling_prob(g, random_path)
     # Generate user samples
+    num_reviews = len(g.review)  # number of reviews
+    uni_labels = np.unique(g.label.values())  #  unique labels
     print('Generate user samples')
     for user in tqdm(user_nodes):
         items = g.node_u[user]
@@ -118,9 +120,9 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(other_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(np.random.choice(g.review.values()))
-                samples['rating2'].append(np.random.choice(g.rating.values()))
-                samples['label2'].append(np.random.choice(g.label.values()))
+                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['label2'].append(np.random.choice(uni_labels))
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
                 else:
@@ -168,9 +170,9 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(np.random.choice(g.review.values()))
-                samples['rating2'].append(np.random.choice(g.rating.values()))
-                samples['label2'].append(np.random.choice(g.label.values()))
+                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['label2'].append(np.random.choice(uni_labels))
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
                 else:
@@ -218,9 +220,9 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(item)
-                samples['review2'].append(np.random.choice(g.review.values()))
-                samples['rating2'].append(np.random.choice(g.rating.values()))
-                samples['label2'].append(np.random.choice(g.label.values()))
+                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['label2'].append(np.random.choice(uni_labels))
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
                 else:
@@ -268,9 +270,9 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(np.random.choice(g.review.values()))
-                samples['rating2'].append(np.random.choice(g.rating.values()))
-                samples['label2'].append(np.random.choice(g.label.values()))
+                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['label2'].append(np.random.choice(uni_labels))
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
                 else:
