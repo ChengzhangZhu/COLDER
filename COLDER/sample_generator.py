@@ -37,7 +37,7 @@ def negative_sampling_prob(g=SocialGraph(), random_path=None):
         user_sample_prob[i] = user_sample_prob[i]*1.0/user_total
     for i in item_sample_prob:
         item_sample_prob[i] = item_sample_prob[i]*1.0/item_total
-    return user_sample_prob.values(), item_sample_prob.values()
+    return np.asarray(user_sample_prob.values()), np.asarray(item_sample_prob.values())
 
 
 def negative_sample(sets, conflicts, p=None):
@@ -77,7 +77,9 @@ def sample_generator(g=SocialGraph(), random_path=None):
     user_sample_prob, item_sample_prob = negative_sampling_prob(g, random_path)
     # Generate user samples
     num_reviews = len(g.review)  # number of reviews
-    uni_labels = np.unique(g.label.values())  #  unique labels
+    sample_index = np.r_[0:num_reviews]  # the index used to random selection
+    review_keys = g.review.keys()
+    uni_labels = np.unique(g.label.values())  # unique labels
     print('Generate user samples')
     for user in tqdm(user_nodes):
         items = g.node_u[user]
@@ -120,8 +122,8 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(other_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
-                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['review2'].append(g.review[review_keys[np.random.choice(sample_index)]])
+                samples['rating2'].append(g.rating[review_keys[np.random.choice(sample_index)]])
                 samples['label2'].append(np.random.choice(uni_labels))
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
@@ -170,8 +172,8 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
-                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['review2'].append(g.review[review_keys[np.random.choice(sample_index)]])
+                samples['rating2'].append(g.rating[review_keys[np.random.choice(sample_index)]])
                 samples['label2'].append(np.random.choice(uni_labels))
                 if negative_item in item_context[item]:
                     samples['context_i'].append(1)
@@ -220,8 +222,8 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(item)
-                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
-                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['review2'].append(g.review[review_keys[np.random.choice(sample_index)]])
+                samples['rating2'].append(g.rating[review_keys[np.random.choice(sample_index)]])
                 samples['label2'].append(np.random.choice(uni_labels))
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
@@ -270,8 +272,8 @@ def sample_generator(g=SocialGraph(), random_path=None):
                     samples['success2'].append(0)
                 samples['user2'].append(negative_user)
                 samples['item2'].append(negative_item)
-                samples['review2'].append(g.review.values()[np.random.choice(np.r_[0:num_reviews])])
-                samples['rating2'].append(g.rating.values()[np.random.choice(np.r_[0:num_reviews])])
+                samples['review2'].append(g.review[review_keys[np.random.choice(sample_index)]])
+                samples['rating2'].append(g.rating[review_keys[np.random.choice(sample_index)]])
                 samples['label2'].append(np.random.choice(uni_labels))
                 if negative_user in user_context[user]:
                     samples['context_u'].append(1)
