@@ -9,10 +9,9 @@ Date: 2018-11-22
 from context_generator import social_implicit_path_generator, path2context
 from graph import SocialGraph
 import numpy as np
-import pickle
+import pickle, cPickle
 from tqdm import tqdm
 import argparse
-
 
 def negative_sampling_prob(g=SocialGraph(), random_path=None):
     init_u = np.zeros(len(g.node_u))
@@ -367,8 +366,10 @@ def main():
         random_path = pickle.load(open('{}_path.pkl'.format(args.save_name), 'rb'))
     print('Construct Samples...')
     samples = sample_generator(graph, random_path)
-    pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
-    # return None
+    # pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
+    cPickle.dump(samples, open('{}_sample.cpkl'.format(args.save_name), 'wb'))
+    print('Finish!')
+    return None
 
 
 if __name__ == "__main__":
