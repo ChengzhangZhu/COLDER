@@ -61,12 +61,12 @@ def fast_negative_sample(random_sets, conflicts, index):
     count = 0
     while True:
         count += 1
+        if count == max_len:
+            break
         if random_sets[index] not in conflicts:
             index += 1
             if index == max_len:
                 index = 0
-            if count == max_len:
-                break
             return random_sets[index], index
     return random_sets[index], index
 
