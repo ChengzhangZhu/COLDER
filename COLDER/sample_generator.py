@@ -56,6 +56,21 @@ def negative_sample(sets, conflicts, p=None):
     return None
 
 
+def fast_negative_sample(random_sets, conflicts, index):
+    max_len = len(random_sets)
+    count = 0
+    while True:
+        count += 1
+        if random_sets[index] not in conflicts:
+            index += 1
+            if index == max_len:
+                index = 0
+            if count == max_len:
+                break
+            return random_sets[index], index
+    return random_sets[index], index
+
+
 def shuffle_samples(samples):
     num_samples = len(samples.values()[0])
     index = np.r_[0:num_samples]
@@ -71,10 +86,14 @@ def sample_generator(g=SocialGraph(), random_path=None):
     print('Transfer random path to context...')
     user_context = path2context(g.node_u.keys(), random_path['user_path'])
     item_context = path2context(g.node_i.keys(), random_path['item_path'])
-    user_nodes = g.node_u.keys()  # the user id
-    item_nodes = g.node_i.keys()  # the item id
+    user_nodes = np.asarray(g.node_u.keys())  # the user id
+    item_nodes = np.asarray(g.node_i.keys())  # the item id
     print('Calculate negative sampling probability...')
     user_sample_prob, item_sample_prob = negative_sampling_prob(g, random_path)
+    user_sample_index = 0  # the user negative sampling index
+    item_sample_index = 0 # the item negative sampling index
+    negative_user_set = np.random.choice(user_nodes, size=len(user_nodes)*10, p=user_sample_prob)
+    negative_item_set = np.random.choice(item_nodes, size=len(item_nodes)*10, p=item_sample_prob)
     # Generate user samples
     num_reviews = len(g.review)  # number of reviews
     sample_index = np.r_[0:num_reviews]  # the index used to random selection
@@ -137,7 +156,7 @@ def sample_generator(g=SocialGraph(), random_path=None):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                negative_user = negative_sample(sets=user_nodes, conflicts=user_context[user], p=user_sample_prob)
+                negative_user, user_sample_index = fast_negative_sample(random_sets=negative_user_set, conflicts=user_context[user], index=user_sample_index)
                 if negative_user is None:
                     negative_user = np.random.choice(user_nodes)
                     samples['context_u'].append(1)
@@ -237,7 +256,7 @@ def sample_generator(g=SocialGraph(), random_path=None):
                 samples['rating1'].append(g.rating[(user, item)])
                 samples['label1'].append(g.label[(user, item)])
                 samples['success1'].append(1)
-                negative_item = negative_sample(sets=item_nodes, conflicts=item_context[item], p=item_sample_prob)
+                negative_item, item_sample_index = fast_negative_sample(random_sets=negative_item_set, conflicts=item_context[item], index=item_sample_index)
                 if negative_item is None:
                     negative_item = np.random.choice(item_nodes)
                     samples['context_i'].append(1)
