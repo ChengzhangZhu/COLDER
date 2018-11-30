@@ -289,7 +289,7 @@ class Network:
             train_loss = []
             for j in iters:
                 train_data = self.train_data_generator(data, g, j, batch_size, num_train)
-                history = self.joint_model.fit(train_data, epoch=epoch, batch_size=batch_size)
+                history = self.joint_model.fit(train_data, epochs=1, batch_size=batch_size, verbose=0)
                 train_loss.append(history.history['loss'][-1])
                 iters.set_description('Training loss: {:.4} >>>>'.format(history.history['loss'][-1]))
             self.loss_history.append(np.mean(train_loss))
