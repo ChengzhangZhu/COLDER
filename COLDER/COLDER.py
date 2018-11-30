@@ -5,7 +5,7 @@ It includes the COLDER structure, COLDER training, and COLDER prediction.
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-28
 """
-from keras.layers import Input, Embedding, LSTM, Dense, Conv1D, MaxPooling1D, Flatten
+from keras.layers import Input, Embedding, LSTM, Dense, Conv1D, MaxPooling1D, Flatten, concatenate
 from keras.models import Model
 import numpy as np
 from keras import backend as K
@@ -29,7 +29,7 @@ class BehaviorSuccessLoss(Layer):
         super(BehaviorSuccessLoss, self).__init__(**kwargs)
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0][0], 1)
+        return (1, 1)
 
     def call(self, inputs, **kwargs):
         user = inputs[0]
@@ -40,7 +40,7 @@ class BehaviorSuccessLoss(Layer):
         b = user + item + review + rating #Eq (2)
         s = 2*1.0/(1 + K.clip(K.exp(-K.l2_normalize(b)), K.epsilon(), 1)) - 1
         loss = -label*K.log(s)
-        return loss
+        return K.mean(loss)
 
 
 class SocialRelationLoss(Layer):
@@ -48,7 +48,7 @@ class SocialRelationLoss(Layer):
         super(SocialRelationLoss, self).__init__(**kwargs)
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0][0], 1)
+        return (1, 1)
 
     def call(self, inputs, **kwargs):
         object_1 = inputs[0]
@@ -57,7 +57,7 @@ class SocialRelationLoss(Layer):
         similarity = K.sum(object_1*object_2)
         s = 2*1.0/(1 + K.clip(K.exp(-similarity), K.epsilon(), 1)) - 1
         loss = -label*K.log(s)
-        return loss
+        return K.mean(loss)
 
 
 class FraudDetectionLoss(Layer):
@@ -65,13 +65,35 @@ class FraudDetectionLoss(Layer):
         super(FraudDetectionLoss, self).__init__(**kwargs)
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0][0], 1)
+        return (1, 1)
 
     def call(self, inputs, **kwargs):
         y_pred = inputs[0]
-        y_true = inputs[0]
-        return K.binary_crossentropy(y_true, y_pred)
-    
+        y_true = inputs[1]
+        mask = inputs[2]
+        loss = K.binary_crossentropy(y_true, y_pred)*mask # do not consider the negative samples in fraud detector
+        return loss/(K.sum(mask) + K.epsilon())  # generate the mean loss of positive samples
+
+
+class JointLoss(Layer):
+    def __init__(self, **kwargs):
+        super(JointLoss, self).__init__(**kwargs)
+
+    def compute_output_shape(self, input_shape):
+        return (1,1)
+
+    def call(self, inputs, alpha=None, **kwargs):
+        fraud_detection_loss_1 = inputs[0]
+        fraud_detection_loss_2 = inputs[1]
+        behavior_success_loss_1 = inputs[2]
+        behavior_success_loss_2 = inputs[3]
+        user_social_relation_loss = inputs[4]
+        item_social_relation_loss = inputs[5]
+        if alpha is None:
+            alpha = np.ones(4)
+        loss = alpha[0]*(fraud_detection_loss_1+fraud_detection_loss_2) + alpha[1]*(behavior_success_loss_1+behavior_success_loss_2) + alpha[2]*user_social_relation_loss + alpha[3]*item_social_relation_loss
+        return loss
+
 
 class COLDER:
     """
@@ -204,12 +226,16 @@ class Network:
         behavior_success_input_2 = Input(shape=(1,), dtype='int32', name='behavior_success_flag_2')
 
         # Calculate Loss Value
+        joint_features_1 = concatenate([user_1, item_1, review_1, rating_1])  #  concatenate embedding features as fraud detector's input
+        joint_features_2 = concatenate([user_2, item_2, review_2, rating_2])
+        fraud_prediction_1 = self.fraud_detector(joint_features_1)
+        fraud_prediction_2 = self.fraud_detector(joint_features_2)
         behavior_success_loss_1 = BehaviorSuccessLoss()([user_1, item_1, review_1, rating_1, behavior_success_input_1])
         behavior_success_loss_2 = BehaviorSuccessLoss()([user_2, item_2, review_2, rating_2, behavior_success_input_2])
         user_social_relation_loss = SocialRelationLoss()([user_1, user_2, user_context_input])
         item_social_relation_loss = SocialRelationLoss()([item_1, item_2, item_context_input])
-        fraud_detection_loss_1 = FraudDetectionLoss()([user_1, item_1, review_1, rating_1, fraud_label_input_1])
-        fraud_detection_loss_2 = FraudDetectionLoss()([user_2, item_2, review_2, rating_2, fraud_label_input_2])
+        fraud_detection_loss_1 = FraudDetectionLoss()([fraud_prediction_1, fraud_label_input_1, behavior_success_input_1])
+        fraud_detection_loss_2 = FraudDetectionLoss()([fraud_prediction_2, fraud_label_input_2, behavior_success_input_2])
         loss = JointLoss()([fraud_detection_loss_1, fraud_detection_loss_2, behavior_success_loss_1, behavior_success_loss_2, user_social_relation_loss, item_social_relation_loss])
         self.joint_model = Model(inputs=[user_input_1, item_input_1,
                                          review_input_1, rating_input_1,
