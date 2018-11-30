@@ -331,7 +331,7 @@ class Network:
         inputs = [user1, item1, review1, rating1, label1, context_u, success1,
                   user2, item2, review2, rating2, label2, context_i, success2]
         return inputs
-    
+
     def preprocess(self, data, token=None):
         if token is None:
             corpus = []
