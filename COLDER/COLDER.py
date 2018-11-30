@@ -13,6 +13,7 @@ from keras.engine.topology import Layer
 from keras.constraints import unit_norm
 from keras.preprocessing.text import Tokenizer, text_to_word_sequence
 from graph import SocialGraph
+from tqdm import tqdm
 
 
 class UnitNorm(Layer):
@@ -134,6 +135,7 @@ class Network:
         if fraud_detector_nodes is None:
             fraud_detector_nodes = [100, 100]
         self.fraud_detector_nodes = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
+        self.loss_history = list()  # record the training loss in each epoch
 
     def build_model(self, rating_input_dim = None, user_input_dim = None, item_input_dim = None):
         if rating_input_dim is None:
@@ -257,7 +259,7 @@ class Network:
                                  outputs=loss)
         self.joint_model.compile(optimizer='adam', loss=None)
 
-    def fit(self, g=SocialGraph()):
+    def fit(self, data, g=SocialGraph(), epoch=5, batch_size=32):
         # preprocess data
         if self.user_id is None:
             self.user_id = np.asarray(g.node_u.keys())
@@ -278,6 +280,58 @@ class Network:
         if self.joint_model is None:
             self.build_model()
 
+        # Training Model
+        num_train = len(data['user1'])
+        for i in range(epoch):
+            print('{}-th epoch begin:'.format(i))
+            num_iters = num_train/batch_size if num_train%batch_size == 0 else int(num_train/batch_size) + 1
+            iters = tqdm(range(num_iters))
+            train_loss = []
+            for j in iters:
+                train_data = self.train_data_generator(data, g, j, batch_size, num_train)
+                history = self.joint_model.fit(train_data, epoch=epoch, batch_size=batch_size)
+                train_loss.append(history.history['loss'][-1])
+                iters.set_description('Training loss: {:.4} >>>>'.format(history.history['loss'][-1]))
+            self.loss_history.append(np.mean(train_loss))
+            print('{}-th epoch ended, training loss {:.4}.'.format(i, np.mean(train_loss)))
+
+    def train_data_generator(self, data, g, j, batch_size, num_train):
+        if j*batch_size + batch_size < num_train:
+            user1 = data['user1'][j*batch_size:j*batch_size+batch_size]
+            user2 = data['user2'][j*batch_size:j*batch_size+batch_size]
+            item1 = data['item1'][j*batch_size:j*batch_size+batch_size]
+            item2 = data['item2'][j*batch_size:j*batch_size+batch_size]
+            rating1 = data['rating1'][j*batch_size:j*batch_size+batch_size]
+            rating2 = data['rating2'][j*batch_size:j*batch_size+batch_size]
+            label1 = data['label1'][j*batch_size:j*batch_size+batch_size]
+            label2 = data['label2'][j*batch_size:j*batch_size+batch_size]
+            context_u = data['context_u'][j*batch_size:j*batch_size+batch_size]
+            context_i = data['context_i'][j*batch_size:j*batch_size+batch_size]
+            success1 = data['success1'][j*batch_size:j*batch_size+batch_size]
+            success2 = data['success2'][j*batch_size:j*batch_size+batch_size]
+            review_id_1 = data['review1'][j*batch_size:j*batch_size+batch_size]
+            review_id_2 = data['review2'][j*batch_size:j*batch_size+batch_size]
+        else:
+            user1 = data['user1'][j * batch_size:]
+            user2 = data['user2'][j * batch_size:]
+            item1 = data['item1'][j * batch_size:]
+            item2 = data['item2'][j * batch_size:]
+            rating1 = data['rating1'][j * batch_size:]
+            rating2 = data['rating2'][j * batch_size:]
+            label1 = data['label1'][j * batch_size:]
+            label2 = data['label2'][j * batch_size:]
+            context_u = data['context_u'][j * batch_size:]
+            context_i = data['context_i'][j * batch_size:]
+            success1 = data['success1'][j * batch_size:]
+            success2 = data['success2'][j * batch_size:]
+            review_id_1 = data['review1'][j * batch_size:]
+            review_id_2 = data['review2'][j * batch_size:]
+        review1 = [g.review[i] for i in review_id_1]
+        review2 = [g.review[i] for i in review_id_2]
+        inputs = [user1, item1, review1, rating1, label1, context_u, success1,
+                  user2, item2, review2, rating2, label2, context_i, success2]
+        return inputs
+    
     def preprocess(self, data, token=None):
         if token is None:
             corpus = []
