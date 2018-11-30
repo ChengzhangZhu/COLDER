@@ -145,16 +145,19 @@ class Network:
         # Rating Embedding
         rating_input = Input(shape=(1,), dtype='int32')
         rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Rating_Embedding')(rating_input)
+        rating_embedding = Flatten()(rating_embedding)
         self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding)
 
         # User Embedding
         user_input = Input(shape=(1,), dtype='int32')
         user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='User_Embedding')(user_input)
+        user_embedding = Flatten()(user_embedding)
         self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding)
 
         # Item Embedding
         item_input = Input(shape=(1,), dtype='int32')
         item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Item_Embedding')(item_input)
+        item_embedding = Flatten()(item_embedding)
         self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding)
 
         # Review Embedding
