@@ -377,16 +377,16 @@ class Network:
         return processed_data, tokenizer
 
     def predict(self, user, item, review, rating):
-        item_embedding = self.item_embedding_model(item)
-        review = self.preprocess(review, token=self.config['review_tokenizer'])
-        review_embedding = self.review_embedding_model(review)
-        rating_embedding = self.rating_embedding_model(rating)
+        item_embedding = self.item_embedding_model.predict(item)
+        # review = self.preprocess(review, token=self.config['review_tokenizer'])
+        review_embedding = self.review_embedding_model.predict(review)
+        rating_embedding = self.rating_embedding_model.predict(rating)
         if user not in self.config['user_id']:
             user_embedding = self.estimator(item_embedding, review_embedding, rating_embedding)
         else:
-            user_embedding = self.user_embedding_model(user)
-        joint_feature = concatenate([user_embedding, item_embedding, review_embedding, rating_embedding])
-        pred = self.fraud_detector(joint_feature)
+            user_embedding = self.user_embedding_model.predict(user)
+        joint_feature = np.concatenate([user_embedding, item_embedding, review_embedding, rating_embedding], axis=1)
+        pred = self.fraud_detector.predict(joint_feature)
         return pred
 
     def estimator(self, item_embedding, review_embedding, rating_embedding):
@@ -394,7 +394,7 @@ class Network:
         for i in range(len(item_embedding)):
             item_e = item_embedding[i]
             review_e = review_embedding[i]
-            rating_e = review_embedding[i]
+            rating_e = rating_embedding[i]
             user = tf.get_variable('user_embedding_{}'.format(i), shape=(1, self.config['dim']), dtype=tf.float32)
             item = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
             review = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
@@ -413,3 +413,24 @@ class Network:
                 user_embedding.append(sess.run(user_norm))
         return user_embedding
 
+# # For Test ~~~~~~~~~~~~~~~~~~~~
+# import pickle
+# g = pickle.load(open('test_graph.pkl', 'rb'))
+# data = cPickle.load(open('test_sample.cpkl', 'rb'))
+# n = Network()
+# n.fit(data, g=g, epoch=10)
+# test_ui = g.review.keys()[1:10]
+# test_u = np.asarray([[i[0]] for i in test_ui])
+# test_i = np.asarray([[i[1]] for i in test_ui])
+# test_review = np.asarray(g.review.values()[1:10])
+# test_rating = np.asarray(g.rating.values()[1:10])
+# test_label = g.label.values()[1:10]
+# pred_label = n.predict(test_u, test_i, test_review, test_rating)
+# for i,l in enumerate(pred_label):
+#     if l<0.5:
+#         pred_label[i] = 0
+#     else:
+#         pred_label[i] = 1
+# print(pred_label[:])
+# print(test_label)
+# # For Test ~~~~~~~~~~~~~~~~~~~~
