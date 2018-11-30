@@ -94,6 +94,7 @@ class JointLoss(Layer):
         if alpha is None:
             alpha = np.ones(4)
         loss = alpha[0]*(fraud_detection_loss_1+fraud_detection_loss_2) + alpha[1]*(behavior_success_loss_1+behavior_success_loss_2) + alpha[2]*user_social_relation_loss + alpha[3]*item_social_relation_loss
+        self.add_loss(loss, inputs=inputs)
         return loss
 
 
