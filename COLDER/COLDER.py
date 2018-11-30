@@ -309,8 +309,8 @@ class Network:
             context_i = np.asarray(data['context_i'][j*batch_size:j*batch_size+batch_size])
             success1 = np.asarray(data['success1'][j*batch_size:j*batch_size+batch_size])
             success2 = np.asarray(data['success2'][j*batch_size:j*batch_size+batch_size])
-            review_id_1 = np.asarray(data['review1'][j*batch_size:j*batch_size+batch_size])
-            review_id_2 = np.asarray(data['review2'][j*batch_size:j*batch_size+batch_size])
+            review_id_1 = data['review1'][j*batch_size:j*batch_size+batch_size]
+            review_id_2 = data['review2'][j*batch_size:j*batch_size+batch_size]
         else:
             user1 = np.asarray(data['user1'][j * batch_size:])
             user2 = np.asarray(data['user2'][j * batch_size:])
@@ -326,8 +326,6 @@ class Network:
             success2 = np.asarray(data['success2'][j * batch_size:])
             review_id_1 = data['review1'][j * batch_size:]
             review_id_2 = data['review2'][j * batch_size:]
-        print(review_id_1[0])
-        print(g.review[review_id_1[0]])
         review1 = np.asarray([g.review[i].tolist() for i in review_id_1])
         review2 = np.asarray([g.review[i].tolist() for i in review_id_2])
         inputs = [user1, item1, review1, rating1, label1, context_u, success1,
