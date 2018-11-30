@@ -42,8 +42,10 @@ class BehaviorSuccessLoss(Layer):
         label = inputs[4]
         b = user + item + review + rating #Eq (2)
         s = 2*1.0/(1 + K.clip(K.exp(-K.l2_normalize(b)), K.epsilon(), 1)) - 1
-        loss = -label*K.log(s)
-        return K.mean(loss)
+        label = K.clip(label, K.epsilon(), 1)
+        s = K.clip(s, K.epsilon(), 1)
+        loss = K.mean(label*K.log(label/s))
+        return loss
 
 
 class SocialRelationLoss(Layer):
@@ -57,10 +59,12 @@ class SocialRelationLoss(Layer):
         object_1 = inputs[0]
         object_2 = inputs[1]
         label = inputs[2]
-        similarity = K.sum(object_1*object_2)
+        similarity = K.sum(object_1*object_2, axis=-1, keepdims=True)
         s = 2*1.0/(1 + K.clip(K.exp(-similarity), K.epsilon(), 1)) - 1
-        loss = -label*K.log(s)
-        return K.mean(loss)
+        label = K.clip(label, K.epsilon(), 1)
+        s = K.clip(s, K.epsilon(), 1)
+        loss = K.mean(label*K.log(label/s))
+        return loss
 
 
 class FraudDetectionLoss(Layer):
@@ -75,7 +79,7 @@ class FraudDetectionLoss(Layer):
         y_true = inputs[1]
         mask = inputs[2]
         loss = K.binary_crossentropy(y_true, y_pred)*mask # do not consider the negative samples in fraud detector
-        return loss/(K.sum(mask) + K.epsilon())  # generate the mean loss of positive samples
+        return K.sum(loss/(K.sum(mask) + K.epsilon()))  # generate the mean loss of positive samples
 
 
 class JointLoss(Layer):
