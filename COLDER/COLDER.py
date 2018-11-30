@@ -206,7 +206,7 @@ class Network:
         review_input_1 = Input(shape=(self.max_len,), dtype='int32', name='review_input_1')
         review_input_2 = Input(shape=(self.max_len,), dtype='int32', name='review_input_2')
         rating_input_1 = Input(shape=(1,), dtype='int32', name='rating_input_1')
-        rating_input_2 = Input(shape=(1,), dtype='int32', name='rating_input_@')
+        rating_input_2 = Input(shape=(1,), dtype='int32', name='rating_input_2')
         user_1 = self.user_embedding_model(user_input_1)
         user_2 = self.user_embedding_model(user_input_2)
         item_1 = self.item_embedding_model(item_input_1)
