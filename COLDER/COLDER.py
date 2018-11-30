@@ -147,19 +147,19 @@ class Network:
         rating_input = Input(shape=(1,), dtype='int32')
         rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Rating_Embedding')(rating_input)
         rating_embedding = Flatten()(rating_embedding)
-        self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding)
+        self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding, name='rating_embedding_model')
 
         # User Embedding
         user_input = Input(shape=(1,), dtype='int32')
         user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='User_Embedding')(user_input)
         user_embedding = Flatten()(user_embedding)
-        self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding)
+        self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding, name='user_embedding_model')
 
         # Item Embedding
         item_input = Input(shape=(1,), dtype='int32')
         item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Item_Embedding')(item_input)
         item_embedding = Flatten()(item_embedding)
-        self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding)
+        self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding, name='item_embedding_model')
 
         # Review Embedding
         word_index = self.review_tokenizer.word_index
@@ -195,18 +195,18 @@ class Network:
                                         padding='valid')(review_embedding)
         review_embedding = Flatten()(review_embedding)
         review_embedding = UnitNorm(name='Review_Embedding')(review_embedding)
-        self.review_embedding_model = Model(inputs=review_input, outputs=review_embedding)
+        self.review_embedding_model = Model(inputs=review_input, outputs=review_embedding, name='review_embedding_model')
 
         # Embedding Calculation:
         # <user_1, item_1, review_1, rating_1> and <user_2, item_2, review_2, rating_2>
-        user_input_1 = Input(shape=(1,), dtype='int32')
-        user_input_2 = Input(shape=(1,), dtype='int32')
-        item_input_1 = Input(shape=(1,), dtype='int32')
-        item_input_2 = Input(shape=(1,), dtype='int32')
-        review_input_1 = Input(shape=(self.max_len,), dtype='int32')
-        review_input_2 = Input(shape=(self.max_len,), dtype='int32')
-        rating_input_1 = Input(shape=(1,), dtype='int32')
-        rating_input_2 = Input(shape=(1,), dtype='int32')
+        user_input_1 = Input(shape=(1,), dtype='int32', name='user_input_1')
+        user_input_2 = Input(shape=(1,), dtype='int32', name='user_input_2')
+        item_input_1 = Input(shape=(1,), dtype='int32', name='item_input_1')
+        item_input_2 = Input(shape=(1,), dtype='int32', name='item_input_2')
+        review_input_1 = Input(shape=(self.max_len,), dtype='int32', name='review_input_1')
+        review_input_2 = Input(shape=(self.max_len,), dtype='int32', name='review_input_2')
+        rating_input_1 = Input(shape=(1,), dtype='int32', name='rating_input_1')
+        rating_input_2 = Input(shape=(1,), dtype='int32', name='rating_input_@')
         user_1 = self.user_embedding_model(user_input_1)
         user_2 = self.user_embedding_model(user_input_2)
         item_1 = self.item_embedding_model(item_input_1)
