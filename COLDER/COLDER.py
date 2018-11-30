@@ -224,12 +224,12 @@ class Network:
         self.fraud_detector = Model(inputs=fraud_input,outputs=fraud_output)
 
         # Define Label Inputs
-        user_context_input = Input(shape=(1,), dtype='int32', name='user_context_flag')
-        item_context_input = Input(shape=(1,), dtype='int32', name='item_context_flag')
-        fraud_label_input_1 = Input(shape=(1,), dtype='int32', name='fraud_label_input_1')
-        fraud_label_input_2 = Input(shape=(1,), dtype='int32', name='fraud_label_input_2')
-        behavior_success_input_1 = Input(shape=(1,), dtype='int32', name='behavior_success_flag_1')
-        behavior_success_input_2 = Input(shape=(1,), dtype='int32', name='behavior_success_flag_2')
+        user_context_input = Input(shape=(1,), name='user_context_flag')
+        item_context_input = Input(shape=(1,), name='item_context_flag')
+        fraud_label_input_1 = Input(shape=(1,), name='fraud_label_input_1')
+        fraud_label_input_2 = Input(shape=(1,), name='fraud_label_input_2')
+        behavior_success_input_1 = Input(shape=(1,), name='behavior_success_flag_1')
+        behavior_success_input_2 = Input(shape=(1,), name='behavior_success_flag_2')
 
         # Calculate Loss Value
         joint_features_1 = concatenate([user_1, item_1, review_1, rating_1])  #  concatenate embedding features as fraud detector's input
