@@ -297,37 +297,37 @@ class Network:
 
     def train_data_generator(self, data, g, j, batch_size, num_train):
         if j*batch_size + batch_size < num_train:
-            user1 = data['user1'][j*batch_size:j*batch_size+batch_size]
-            user2 = data['user2'][j*batch_size:j*batch_size+batch_size]
-            item1 = data['item1'][j*batch_size:j*batch_size+batch_size]
-            item2 = data['item2'][j*batch_size:j*batch_size+batch_size]
-            rating1 = data['rating1'][j*batch_size:j*batch_size+batch_size]
-            rating2 = data['rating2'][j*batch_size:j*batch_size+batch_size]
-            label1 = data['label1'][j*batch_size:j*batch_size+batch_size]
-            label2 = data['label2'][j*batch_size:j*batch_size+batch_size]
-            context_u = data['context_u'][j*batch_size:j*batch_size+batch_size]
-            context_i = data['context_i'][j*batch_size:j*batch_size+batch_size]
-            success1 = data['success1'][j*batch_size:j*batch_size+batch_size]
-            success2 = data['success2'][j*batch_size:j*batch_size+batch_size]
-            review_id_1 = data['review1'][j*batch_size:j*batch_size+batch_size]
-            review_id_2 = data['review2'][j*batch_size:j*batch_size+batch_size]
+            user1 = np.asarray(data['user1'][j*batch_size:j*batch_size+batch_size])
+            user2 = np.asarray(data['user2'][j*batch_size:j*batch_size+batch_size])
+            item1 = np.asarray(data['item1'][j*batch_size:j*batch_size+batch_size])
+            item2 = np.asarray(data['item2'][j*batch_size:j*batch_size+batch_size])
+            rating1 = np.asarray(data['rating1'][j*batch_size:j*batch_size+batch_size])
+            rating2 = np.asarray(data['rating2'][j*batch_size:j*batch_size+batch_size])
+            label1 = np.asarray(data['label1'][j*batch_size:j*batch_size+batch_size])
+            label2 = np.asarray(data['label2'][j*batch_size:j*batch_size+batch_size])
+            context_u = np.asarray(data['context_u'][j*batch_size:j*batch_size+batch_size])
+            context_i = np.asarray(data['context_i'][j*batch_size:j*batch_size+batch_size])
+            success1 = np.asarray(data['success1'][j*batch_size:j*batch_size+batch_size])
+            success2 = np.asarray(data['success2'][j*batch_size:j*batch_size+batch_size])
+            review_id_1 = np.asarray(data['review1'][j*batch_size:j*batch_size+batch_size])
+            review_id_2 = np.asarray(data['review2'][j*batch_size:j*batch_size+batch_size])
         else:
-            user1 = data['user1'][j * batch_size:]
-            user2 = data['user2'][j * batch_size:]
-            item1 = data['item1'][j * batch_size:]
-            item2 = data['item2'][j * batch_size:]
-            rating1 = data['rating1'][j * batch_size:]
-            rating2 = data['rating2'][j * batch_size:]
-            label1 = data['label1'][j * batch_size:]
-            label2 = data['label2'][j * batch_size:]
-            context_u = data['context_u'][j * batch_size:]
-            context_i = data['context_i'][j * batch_size:]
-            success1 = data['success1'][j * batch_size:]
-            success2 = data['success2'][j * batch_size:]
-            review_id_1 = data['review1'][j * batch_size:]
-            review_id_2 = data['review2'][j * batch_size:]
-        review1 = [g.review[i] for i in review_id_1]
-        review2 = [g.review[i] for i in review_id_2]
+            user1 = np.asarray(data['user1'][j * batch_size:])
+            user2 = np.asarray(data['user2'][j * batch_size:])
+            item1 = np.asarray(data['item1'][j * batch_size:])
+            item2 = np.asarray(data['item2'][j * batch_size:])
+            rating1 = np.asarray(data['rating1'][j * batch_size:])
+            rating2 = np.asarray(data['rating2'][j * batch_size:])
+            label1 = np.asarray(data['label1'][j * batch_size:])
+            label2 = np.asarray(data['label2'][j * batch_size:])
+            context_u = np.asarray(data['context_u'][j * batch_size:])
+            context_i = np.asarray(data['context_i'][j * batch_size:])
+            success1 = np.asarray(data['success1'][j * batch_size:])
+            success2 = np.asarray(data['success2'][j * batch_size:])
+            review_id_1 = np.asarray(data['review1'][j * batch_size:])
+            review_id_2 = np.asarray(data['review2'][j * batch_size:])
+        review1 = np.asarray([g.review[i] for i in review_id_1])
+        review2 = np.asarray([g.review[i] for i in review_id_2])
         inputs = [user1, item1, review1, rating1, label1, context_u, success1,
                   user2, item2, review2, rating2, label2, context_i, success2]
         return inputs
