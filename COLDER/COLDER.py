@@ -11,6 +11,8 @@ import numpy as np
 from keras import backend as K
 from keras.engine.topology import Layer
 from keras.constraints import unit_norm
+from keras.preprocessing.text import Tokenizer, text_to_word_sequence
+from graph import SocialGraph
 
 
 class UnitNorm(Layer):
@@ -110,14 +112,15 @@ class Network:
     """
     This class define the network in COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt'):
+    def __init__(self, dim=100, fraud_detector_nodes=None, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.inputs = None  # the list of inputs
         self.fraud_detector = None  # the fraud detector network
-        self.user_tokenizer = None  # user tokenizer
-        self.item_tokenizer = None  # item tokenizer
+        self.user_id = None  # processed user id
+        self.item_id = None  # processed item id
         self.review_tokenizer = None  # review tokenizer
         self.dim = dim  # the embedding dimension
         self.max_len = max_len  # the max length of a sentence
+        self.max_num_words = max_num_words  # the max number of words in reviews
         self.num_filters = num_filters  # the number of filters in ConvNet in review embedding
         self.filter_size = filter_size  # the filter size in ConvNet in review embedding
         self.rating_embedding_model = None
@@ -135,9 +138,9 @@ class Network:
         if rating_input_dim is None:
             rating_input_dim = 5
         if user_input_dim is None:
-            user_input_dim = len(self.user_tokenizer.word_counts)
+            user_input_dim = len(self.user_id)
         if item_input_dim is None:
-            item_input_dim = len(self.item_tokenizer.word_counts)
+            item_input_dim = len(self.item_id)
 
         # Rating Embedding
         rating_input = Input(shape=(1,), dtype='int32')
@@ -249,3 +252,47 @@ class Network:
                                          behavior_success_input_2],
                                  outputs=loss)
         self.joint_model.compile(optimizer='adam', loss=None)
+
+    def fit(self, g=SocialGraph()):
+        # preprocess data
+        if self.user_id is None:
+            self.user_id = np.asarray(g.node_u.keys())
+        else:
+            self.user_id = np.asarray(set(self.user_id + np.asarray(g.node_u.keys())))
+        if self.item_id is None:
+            self.item_id = np.asarray(g.node_i.keys())
+        else:
+            self.item_id = np.asarray(set(self.item_id + np.asarray(g.node_i.keys())))
+        print('Review preprocessing...')
+        if self.review_tokenizer is None:
+            reviews, self.review_tokenizer = self.preprocess(g.review.values())
+        else:
+            reviews, self.review_tokenizer = self.preprocess(g.review.values(), token=self.review_tokenizer)
+        g.review = dict(zip(g.review.keys(), reviews))
+
+        # Build Model
+        if self.joint_model is None:
+            self.build_model()
+
+    def preprocess(self, data, token=None):
+        if token is None:
+            corpus = []
+            for i in data:
+                corpus.append(i)
+            print('Initializing review tokenizer...')
+            tokenizer = Tokenizer(num_words=self.max_num_words)
+            tokenizer.fit_on_texts(corpus)
+            print('Review tokenizing finished...')
+        else:
+            tokenizer = token
+        processed_data = np.zeros((len(data), self.max_len), dtype='int32')
+
+        for j, paragraph in enumerate(data):
+            word_token = text_to_word_sequence(paragraph)
+            k = 0
+            for ii, word in enumerate(word_token):
+                if word in tokenizer.word_index:
+                    if k < self.max_len and tokenizer.word_index[word]<self.max_num_words:
+                        processed_data[j,k] = tokenizer.word_index[word]
+                        k += 1
+        return processed_data, tokenizer
