@@ -14,6 +14,7 @@ from keras.constraints import unit_norm
 from keras.preprocessing.text import Tokenizer, text_to_word_sequence
 from graph import SocialGraph
 from tqdm import tqdm
+import cPickle
 
 
 class UnitNorm(Layer):
@@ -118,60 +119,70 @@ class Network:
     """
     This class define the network in COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
-        self.inputs = None  # the list of inputs
+    def __init__(self, dim=100, fraud_detector_nodes=None, rating_input_dim=5, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
-        self.user_id = None  # processed user id
-        self.item_id = None  # processed item id
-        self.review_tokenizer = None  # review tokenizer
-        self.dim = dim  # the embedding dimension
-        self.max_len = max_len  # the max length of a sentence
-        self.max_num_words = max_num_words  # the max number of words in reviews
-        self.num_filters = num_filters  # the number of filters in ConvNet in review embedding
-        self.filter_size = filter_size  # the filter size in ConvNet in review embedding
+        self.config = dict()  # the configure of the network
+        self.config['user_id'] = None  # processed user id
+        self.config['item_id'] = None  # processed item id
+        self.config['review_tokenizer'] = None  # review tokenizer
+        self.config['dim'] = dim  # the embedding dimension
+        self.config['rating_input_dim'] = rating_input_dim  # the number of rating
+        self.config['max_len'] = max_len  # the max length of a sentence
+        self.config['max_num_words'] = max_num_words  # the max number of words in reviews
+        self.config['num_filters'] = num_filters  # the number of filters in ConvNet in review embedding
+        self.config['filter_size'] = filter_size  # the filter size in ConvNet in review embedding
         self.rating_embedding_model = None
         self.user_embedding_model = None
         self.item_embedding_model = None
         self.review_embedding_model = None
         self.joint_model = None  # the joint training model
-        self.pre_word_embedding_dim = pre_word_embedding_dim  # the dimension of pre-trained word embedding
-        self.pre_word_embedding_file = pre_word_embedding_file  # the pre-trained word embedding file
+        self.config['pre_word_embedding_dim'] = pre_word_embedding_dim  # the dimension of pre-trained word embedding
+        self.config['pre_word_embedding_file'] = pre_word_embedding_file  # the pre-trained word embedding file
         if fraud_detector_nodes is None:
             fraud_detector_nodes = [100, 100]
-        self.fraud_detector_nodes = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
-        self.loss_history = list()  # record the training loss in each epoch
+        self.config['fraud_detector_nodes'] = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
+        self.config['loss_history'] = list()  # record the training loss in each epoch
+    
+    def save(self, name='COLDER'):
+        cPickle.dump(self.config, open(name + '_config.cpkl','wb'))
+        self.joint_model.save_weights(name + '_model.hdf5')
+
+    def load(self, name):
+        self.config = cPickle.load(open(name + '_config.cpkl', 'wb'))
+        self.build_model()
+        self.joint_model.load_weights(name + '_model.hdf5')
 
     def build_model(self, rating_input_dim = None, user_input_dim = None, item_input_dim = None):
         if rating_input_dim is None:
-            rating_input_dim = 5
+            rating_input_dim = self.config['rating_input_dim']
         if user_input_dim is None:
-            user_input_dim = len(self.user_id)
+            user_input_dim = len(self.config['user_id'])
         if item_input_dim is None:
-            item_input_dim = len(self.item_id)
+            item_input_dim = len(self.config['item_id'])
 
         # Rating Embedding
         rating_input = Input(shape=(1,), dtype='int32')
-        rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Rating_Embedding')(rating_input)
+        rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Rating_Embedding')(rating_input)
         rating_embedding = Flatten()(rating_embedding)
         self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding, name='rating_embedding_model')
 
         # User Embedding
         user_input = Input(shape=(1,), dtype='int32')
-        user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='User_Embedding')(user_input)
+        user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='User_Embedding')(user_input)
         user_embedding = Flatten()(user_embedding)
         self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding, name='user_embedding_model')
 
         # Item Embedding
         item_input = Input(shape=(1,), dtype='int32')
-        item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.dim, embeddings_constraint=unit_norm(), name='Item_Embedding')(item_input)
+        item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Item_Embedding')(item_input)
         item_embedding = Flatten()(item_embedding)
         self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding, name='item_embedding_model')
 
         # Review Embedding
-        word_index = self.review_tokenizer.word_index
+        word_index = self.config['review_tokenizer'].word_index
         # # Load pre-trained word embedding
         embeddings_index = {}
-        f = open(self.pre_word_embedding_file)
+        f = open(self.config['pre_word_embedding_file'])
         for line in f:
             values = line.split()
             word = values[0]
@@ -179,20 +190,20 @@ class Network:
             embeddings_index[word] = embed_value
         f.close()
         print('Total %s word vectors.' % len(embeddings_index))
-        embedding_matrix = np.random.random((len(word_index) + 1, self.pre_word_embedding_dim))
+        embedding_matrix = np.random.random((len(word_index) + 1, self.config['pre_word_embedding_dim']))
         for word, i in word_index.items():
             embedding_vector = embeddings_index.get(word)
             if embedding_vector is not None:
                 embedding_matrix[i] = embedding_vector
         # # Build review embedding layers
-        review_input = Input(shape=(self.max_len,), dtype='int32')
+        review_input = Input(shape=(self.config['max_len'],), dtype='int32')
         word_embedding = Embedding(len(word_index)+1,
-                                   self.pre_word_embedding_dim,
+                                   self.config['pre_word_embedding_dim'],
                                    weights=[embedding_matrix],
-                                   input_length=self.max_len,
+                                   input_length=self.config['max_len'],
                                    name='Word_Embedding')(review_input)
-        review_embedding = Conv1D(self.num_filters,
-                                  kernel_size=self.filter_size,
+        review_embedding = Conv1D(self.config['num_filters'],
+                                  kernel_size=self.config['filter_size'],
                                   strides=1,
                                   activation='tanh',
                                   name='Conv_Layer')(word_embedding)
@@ -209,8 +220,8 @@ class Network:
         user_input_2 = Input(shape=(1,), dtype='int32', name='user_input_2')
         item_input_1 = Input(shape=(1,), dtype='int32', name='item_input_1')
         item_input_2 = Input(shape=(1,), dtype='int32', name='item_input_2')
-        review_input_1 = Input(shape=(self.max_len,), dtype='int32', name='review_input_1')
-        review_input_2 = Input(shape=(self.max_len,), dtype='int32', name='review_input_2')
+        review_input_1 = Input(shape=(self.config['max_len'],), dtype='int32', name='review_input_1')
+        review_input_2 = Input(shape=(self.config['max_len'],), dtype='int32', name='review_input_2')
         rating_input_1 = Input(shape=(1,), dtype='int32', name='rating_input_1')
         rating_input_2 = Input(shape=(1,), dtype='int32', name='rating_input_2')
         user_1 = self.user_embedding_model(user_input_1)
@@ -223,10 +234,10 @@ class Network:
         rating_2 = self.rating_embedding_model(rating_input_2)
 
         # Fraud detector
-        fraud_input = Input(shape=(4*self.dim,), name='fraud_detector_input')
-        fraud_hidden_output = Dense(self.fraud_detector_nodes[0], activation='relu')(fraud_input)
-        for i in range(len(self.fraud_detector_nodes)-1):
-            fraud_hidden_output = Dense(self.fraud_detector_nodes[i+1], activation='relu')(fraud_hidden_output)
+        fraud_input = Input(shape=(4*self.config['dim'],), name='fraud_detector_input')
+        fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][0], activation='relu')(fraud_input)
+        for i in range(len(self.config['fraud_detector_nodes'])-1):
+            fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][i+1], activation='relu')(fraud_hidden_output)
         fraud_output = Dense(1, activation='sigmoid', name='fraud_detector_output')(fraud_hidden_output)
         self.fraud_detector = Model(inputs=fraud_input,outputs=fraud_output, name='fraud_detector')
 
@@ -265,19 +276,19 @@ class Network:
 
     def fit(self, data, g=SocialGraph(), epoch=5, batch_size=32):
         # preprocess data
-        if self.user_id is None:
-            self.user_id = np.asarray(g.node_u.keys())
+        if self.config['user_id'] is None:
+            self.config['user_id'] = np.asarray(g.node_u.keys())
         else:
-            self.user_id = np.asarray(set(self.user_id + np.asarray(g.node_u.keys())))
-        if self.item_id is None:
-            self.item_id = np.asarray(g.node_i.keys())
+            self.config['user_id'] = np.asarray(set(self.config['user_id'] + np.asarray(g.node_u.keys())))
+        if self.config['item_id'] is None:
+            self.config['item_id'] = np.asarray(g.node_i.keys())
         else:
-            self.item_id = np.asarray(set(self.item_id + np.asarray(g.node_i.keys())))
+            self.config['item_id'] = np.asarray(set(self.config['item_id'] + np.asarray(g.node_i.keys())))
         print('Review preprocessing...')
-        if self.review_tokenizer is None:
-            reviews, self.review_tokenizer = self.preprocess(g.review.values())
+        if self.config['review_tokenizer'] is None:
+            reviews, self.config['review_tokenizer'] = self.preprocess(g.review.values())
         else:
-            reviews, self.review_tokenizer = self.preprocess(g.review.values(), token=self.review_tokenizer)
+            reviews, self.config['review_tokenizer'] = self.preprocess(g.review.values(), token=self.config['review_tokenizer'])
         g.review = dict(zip(g.review.keys(), reviews))
 
         # Build Model
@@ -296,7 +307,7 @@ class Network:
                 history = self.joint_model.fit(train_data, epochs=1, batch_size=batch_size, verbose=0)
                 train_loss.append(history.history['loss'][-1])
                 iters.set_description('Training loss: {:.4} >>>>'.format(history.history['loss'][-1]))
-            self.loss_history.append(np.mean(train_loss))
+            self.config['loss_history'].append(np.mean(train_loss))
             print('{}-th epoch ended, training loss {:.4}.'.format(i, np.mean(train_loss)))
 
     def train_data_generator(self, data, g, j, batch_size, num_train):
@@ -342,19 +353,19 @@ class Network:
             for i in data:
                 corpus.append(i)
             print('Initializing review tokenizer...')
-            tokenizer = Tokenizer(num_words=self.max_num_words)
+            tokenizer = Tokenizer(num_words=self.config['max_num_words'])
             tokenizer.fit_on_texts(corpus)
             print('Review tokenizing finished...')
         else:
             tokenizer = token
-        processed_data = np.zeros((len(data), self.max_len), dtype='int32')
+        processed_data = np.zeros((len(data), self.config['max_len']), dtype='int32')
 
         for j, paragraph in enumerate(data):
             word_token = text_to_word_sequence(paragraph)
             k = 0
             for ii, word in enumerate(word_token):
                 if word in tokenizer.word_index:
-                    if k < self.max_len and tokenizer.word_index[word]<self.max_num_words:
+                    if k < self.config['max_len'] and tokenizer.word_index[word]<self.config['max_num_words']:
                         processed_data[j,k] = tokenizer.word_index[word]
                         k += 1
         return processed_data, tokenizer
