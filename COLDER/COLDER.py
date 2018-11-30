@@ -14,7 +14,13 @@ from keras.constraints import unit_norm
 from keras.preprocessing.text import Tokenizer, text_to_word_sequence
 from graph import SocialGraph
 from tqdm import tqdm
+import tensorflow as tf
 import cPickle
+
+
+def normalization(x):
+    return x * 1.0 / (K.epsilon() + K.sqrt(
+        K.sum(K.square(x), axis=-1, keepdims=True)))
 
 
 class UnitNorm(Layer):
@@ -148,11 +154,11 @@ class Network:
         self.joint_model.save_weights(name + '_model.hdf5')
 
     def load(self, name):
-        self.config = cPickle.load(open(name + '_config.cpkl', 'wb'))
+        self.config = cPickle.load(open(name + '_config.cpkl', 'rb'))
         self.build_model()
         self.joint_model.load_weights(name + '_model.hdf5')
 
-    def build_model(self, rating_input_dim = None, user_input_dim = None, item_input_dim = None):
+    def build_model(self, rating_input_dim=None, user_input_dim=None, item_input_dim=None):
         if rating_input_dim is None:
             rating_input_dim = self.config['rating_input_dim']
         if user_input_dim is None:
@@ -250,7 +256,7 @@ class Network:
         behavior_success_input_2 = Input(shape=(1,), name='behavior_success_flag_2')
 
         # Calculate Loss Value
-        joint_features_1 = concatenate([user_1, item_1, review_1, rating_1])  #  concatenate embedding features as fraud detector's input
+        joint_features_1 = concatenate([user_1, item_1, review_1, rating_1])  # concatenate embedding features as fraud detector's input
         joint_features_2 = concatenate([user_2, item_2, review_2, rating_2])
         fraud_prediction_1 = self.fraud_detector(joint_features_1)
         fraud_prediction_2 = self.fraud_detector(joint_features_2)
@@ -369,3 +375,41 @@ class Network:
                         processed_data[j,k] = tokenizer.word_index[word]
                         k += 1
         return processed_data, tokenizer
+
+    def predict(self, user, item, review, rating):
+        item_embedding = self.item_embedding_model(item)
+        review = self.preprocess(review, token=self.config['review_tokenizer'])
+        review_embedding = self.review_embedding_model(review)
+        rating_embedding = self.rating_embedding_model(rating)
+        if user not in self.config['user_id']:
+            user_embedding = self.estimator(item_embedding, review_embedding, rating_embedding)
+        else:
+            user_embedding = self.user_embedding_model(user)
+        joint_feature = concatenate([user_embedding, item_embedding, review_embedding, rating_embedding])
+        pred = self.fraud_detector(joint_feature)
+        return pred
+
+    def estimator(self, item_embedding, review_embedding, rating_embedding):
+        user_embedding = list()
+        for i in range(len(item_embedding)):
+            item_e = item_embedding[i]
+            review_e = review_embedding[i]
+            rating_e = review_embedding[i]
+            user = tf.get_variable('user_embedding_{}'.format(i), shape=(1, self.config['dim']), dtype=tf.float32)
+            item = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            review = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            rating = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            user_norm = normalization(user)
+            b = user_norm + item + review + rating
+            bn = tf.exp(-tf.norm(b))
+            loss = -(2.0 / (1.0 + bn) - 1)
+            op = tf.train.AdamOptimizer(0.01)
+            train = op.minimize(loss)
+            initializer = tf.global_variables_initializer()
+            with tf.Session() as sess:
+                sess.run(initializer)
+                for i in range(200):
+                    sess.run(train, feed_dict={item: item_e, review: review_e, rating: rating_e})
+                user_embedding.append(sess.run(user_norm))
+        return user_embedding
+
