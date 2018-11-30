@@ -220,7 +220,7 @@ class Network:
         fraud_hidden_output = Dense(self.fraud_detector_nodes[0], activation='relu')(fraud_input)
         for i in range(len(self.fraud_detector_nodes)-1):
             fraud_hidden_output = Dense(self.fraud_detector_nodes[i+1], activation='relu')(fraud_hidden_output)
-        fraud_output = Dense(2, activation='sigmoid', name='fraud_detector_output')(fraud_hidden_output)
+        fraud_output = Dense(1, activation='sigmoid', name='fraud_detector_output')(fraud_hidden_output)
         self.fraud_detector = Model(inputs=fraud_input,outputs=fraud_output)
 
         # Define Label Inputs
