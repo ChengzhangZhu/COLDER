@@ -95,7 +95,7 @@ class SocialGraph:
             labels = data.flagged.get_values()
             for i, l in enumerate(labels):
                 if l == 'N' or l == 'NR':
-                    labels[i] = 0
+                    labels[i] = -1
                 else:
                     labels[i] = 1
         labels = [int(float(i)) for i in labels]

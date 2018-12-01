@@ -51,12 +51,11 @@ class BehaviorSuccessLoss(Layer):
         item = inputs[1]
         review = inputs[2]
         rating = inputs[3]
-        label = inputs[4]
+        label = inputs[4]*2 - 1
         b = user + item + review + rating #Eq (2)
-        s = 2*1.0/(1 + K.clip(K.exp(-K.l2_normalize(b)), K.epsilon(), 1)) - 1
-        label = K.clip(label, K.epsilon(), 1)
+        s = 2*1.0/(1 + K.clip(K.exp(-K.l2_normalize(b)*label), K.epsilon(), 1)) - 1
         s = K.clip(s, K.epsilon(), 1)
-        loss = K.mean(label*K.log(label/s))
+        loss = K.mean(-K.log(s))
         return loss
 
 
@@ -70,12 +69,11 @@ class SocialRelationLoss(Layer):
     def call(self, inputs, **kwargs):
         object_1 = inputs[0]
         object_2 = inputs[1]
-        label = inputs[2]
+        label = inputs[2]*2 - 1
         similarity = K.sum(object_1*object_2, axis=-1, keepdims=True)
-        s = 2*1.0/(1 + K.clip(K.exp(-similarity), K.epsilon(), 1)) - 1
-        label = K.clip(label, K.epsilon(), 1)
+        s = 2*1.0/(1 + K.clip(K.exp(-similarity*label), K.epsilon(), 1)) - 1
         s = K.clip(s, K.epsilon(), 1)
-        loss = K.mean(label*K.log(label/s))
+        loss = K.mean(-K.log(s))
         return loss
 
 
@@ -88,7 +86,7 @@ class FraudDetectionLoss(Layer):
 
     def call(self, inputs, **kwargs):
         y_pred = inputs[0]
-        y_true = inputs[1]
+        y_true = (inputs[1]+1)/2
         mask = inputs[2]
         loss = K.binary_crossentropy(y_true, y_pred)*mask # do not consider the negative samples in fraud detector
         return K.sum(loss/(K.sum(mask) + K.epsilon()))  # generate the mean loss of positive samples
@@ -109,7 +107,7 @@ class JointLoss(Layer):
         user_social_relation_loss = inputs[4]
         item_social_relation_loss = inputs[5]
         if alpha is None:
-            alpha = np.ones(4)
+            alpha = np.array([1,0.5,0.5,0.5])
         loss = alpha[0]*(fraud_detection_loss_1+fraud_detection_loss_2) + alpha[1]*(behavior_success_loss_1+behavior_success_loss_2) + alpha[2]*user_social_relation_loss + alpha[3]*item_social_relation_loss
         self.add_loss(loss, inputs=inputs)
         return loss
@@ -130,7 +128,7 @@ class Network:
     """
     This class define the network in COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, rating_input_dim=5, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
+    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
         self.config = dict()  # the configure of the network
         self.config['user_id'] = None  # processed user id
@@ -152,6 +150,9 @@ class Network:
         if fraud_detector_nodes is None:
             fraud_detector_nodes = [100, 100]
         self.config['fraud_detector_nodes'] = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
+        if alpha is None:
+            alpha = [1, 0.5, 0.5, 0.5]
+        self.config['alpha'] = np.asarray(alpha)  # the coefficients of training losses
         self.config['loss_history'] = list()  # record the training loss in each epoch
     
     def save(self, name='COLDER'):
@@ -274,7 +275,7 @@ class Network:
         item_social_relation_loss = SocialRelationLoss()([item_1, item_2, item_context_input])
         fraud_detection_loss_1 = FraudDetectionLoss()([fraud_prediction_1, fraud_label_input_1, behavior_success_input_1])
         fraud_detection_loss_2 = FraudDetectionLoss()([fraud_prediction_2, fraud_label_input_2, behavior_success_input_2])
-        loss = JointLoss()([fraud_detection_loss_1, fraud_detection_loss_2, behavior_success_loss_1, behavior_success_loss_2, user_social_relation_loss, item_social_relation_loss])
+        loss = JointLoss()([fraud_detection_loss_1, fraud_detection_loss_2, behavior_success_loss_1, behavior_success_loss_2, user_social_relation_loss, item_social_relation_loss], alpha=self.config['alpha'])
         self.joint_model = Model(inputs=[user_input_1, item_input_1,
                                          review_input_1, rating_input_1,
                                          fraud_label_input_1,
@@ -426,12 +427,12 @@ class Network:
         return user_embedding
 
 
-# For Test ~~~~~~~~~~~~~~~~~~~~
+# # #For Test ~~~~~~~~~~~~~~~~~~~~
 # import pickle
 # g = pickle.load(open('test_graph.pkl', 'rb'))
 # data = cPickle.load(open('test_sample.cpkl', 'rb'))
 # n = Network()
-# n.fit(data, g=g, epoch=100)
+# n.fit(data, g=g, epoch=10)
 # test_ui = g.review.keys()[1:10]
 # test_u = np.asarray([[i[0]] for i in test_ui])
 # test_i = np.asarray([[i[1]] for i in test_ui])
@@ -441,9 +442,9 @@ class Network:
 # pred_label = n.predict(test_u, test_i, test_review, test_rating)
 # for i,l in enumerate(pred_label):
 #     if l<0.5:
-#         pred_label[i] = 0
+#         pred_label[i] = -1
 #     else:
 #         pred_label[i] = 1
 # print(pred_label[:])
 # print(test_label)
-# For Test ~~~~~~~~~~~~~~~~~~~~
+# # #For Test ~~~~~~~~~~~~~~~~~~~~
