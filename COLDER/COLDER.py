@@ -18,6 +18,11 @@ import tensorflow as tf
 import cPickle
 
 
+def unit_normalization(x):
+    y = x / (1e-10 + np.sqrt(np.sum(np.square(x), axis=-1, keepdims=True)))
+    return y
+
+
 def normalization(x):
     return x * 1.0 / (K.epsilon() + K.sqrt(
         K.sum(K.square(x), axis=-1, keepdims=True)))
@@ -168,20 +173,23 @@ class Network:
 
         # Rating Embedding
         rating_input = Input(shape=(1,), dtype='int32')
-        rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Rating_Embedding')(rating_input)
+        rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Rating_Init_Embedding')(rating_input)
         rating_embedding = Flatten()(rating_embedding)
+        rating_embedding = UnitNorm(name='Rating_Embedding')(rating_embedding)
         self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding, name='rating_embedding_model')
 
         # User Embedding
         user_input = Input(shape=(1,), dtype='int32')
-        user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='User_Embedding')(user_input)
+        user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='User_Init_Embedding')(user_input)
         user_embedding = Flatten()(user_embedding)
+        user_embedding = UnitNorm(name='User_Embedding')(user_embedding)
         self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding, name='user_embedding_model')
 
         # Item Embedding
         item_input = Input(shape=(1,), dtype='int32')
-        item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Item_Embedding')(item_input)
+        item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Item_Init_Embedding')(item_input)
         item_embedding = Flatten()(item_embedding)
+        item_embedding = UnitNorm(name='Item_Embedding')(item_embedding)
         self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding, name='item_embedding_model')
 
         # Review Embedding
@@ -390,35 +398,40 @@ class Network:
         return pred
 
     def estimator(self, item_embedding, review_embedding, rating_embedding):
-        user_embedding = list()
-        for i in range(len(item_embedding)):
-            item_e = item_embedding[i]
-            review_e = review_embedding[i]
-            rating_e = rating_embedding[i]
-            user = tf.get_variable('user_embedding_{}'.format(i), shape=(1, self.config['dim']), dtype=tf.float32)
-            item = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
-            review = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
-            rating = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
-            user_norm = normalization(user)
-            b = user_norm + item + review + rating
-            bn = tf.exp(-tf.norm(b))
-            loss = -(2.0 / (1.0 + bn) - 1)
-            op = tf.train.AdamOptimizer(0.01)
-            train = op.minimize(loss)
-            initializer = tf.global_variables_initializer()
-            with tf.Session() as sess:
-                sess.run(initializer)
-                for i in range(200):
-                    sess.run(train, feed_dict={item: item_e, review: review_e, rating: rating_e})
-                user_embedding.append(sess.run(user_norm))
+        # # closed-form solution
+        user_embedding = item_embedding + review_embedding + rating_embedding
+        user_embedding = unit_normalization(user_embedding)
+        # # Tensorflow solution
+        # user_embedding = list()
+        # for i in range(len(item_embedding)):
+        #     item_e = item_embedding[i]
+        #     review_e = review_embedding[i]
+        #     rating_e = rating_embedding[i]
+            # user = tf.get_variable('user_embedding_{}'.format(i), shape=(1, self.config['dim']), dtype=tf.float32)
+            # item = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            # review = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            # rating = tf.placeholder(tf.float32, shape=(1, self.config['dim']))
+            # user_norm = normalization(user)
+            # b = user_norm + item + review + rating
+            # bn = tf.exp(-tf.norm(b))
+            # loss = -(2.0 / (1.0 + bn) - 1)
+            # op = tf.train.AdamOptimizer(0.01)
+            # train = op.minimize(loss)
+            # initializer = tf.global_variables_initializer()
+            # with tf.Session() as sess:
+            #     sess.run(initializer)
+            #     for i in range(200):
+            #         sess.run(train, feed_dict={item: item_e, review: review_e, rating: rating_e})
+            #     user_embedding.append(sess.run(user_norm))
         return user_embedding
 
-# # For Test ~~~~~~~~~~~~~~~~~~~~
+
+# For Test ~~~~~~~~~~~~~~~~~~~~
 # import pickle
 # g = pickle.load(open('test_graph.pkl', 'rb'))
 # data = cPickle.load(open('test_sample.cpkl', 'rb'))
 # n = Network()
-# n.fit(data, g=g, epoch=10)
+# n.fit(data, g=g, epoch=100)
 # test_ui = g.review.keys()[1:10]
 # test_u = np.asarray([[i[0]] for i in test_ui])
 # test_i = np.asarray([[i[1]] for i in test_ui])
@@ -433,4 +446,4 @@ class Network:
 #         pred_label[i] = 1
 # print(pred_label[:])
 # print(test_label)
-# # For Test ~~~~~~~~~~~~~~~~~~~~
+# For Test ~~~~~~~~~~~~~~~~~~~~
