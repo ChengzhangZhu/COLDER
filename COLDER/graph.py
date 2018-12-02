@@ -50,6 +50,7 @@ class Graph:
         self.degree[n1] += w
         self.degree[n2] += w
 
+
 class SocialGraph:
 
     def __init__(self):
@@ -64,10 +65,15 @@ class SocialGraph:
         self.rating = dict()  # rating dictionary, (user_id, item_id) --> rating
         self.label = dict()   # label dictionary, (user_id, item_id) --> label
 
-    def build(self, filename):
+    def name_to_id(self, user_name, item_name):
+        user_id = [self.user[i] for i in user_name]
+        item_id = [self.item[i] for i in item_name]
+        return user_id, item_id
 
+    def build(self, filename=None, data=None):
         # Stage 1. Load Data
-        data = pd.read_csv(filename)  # load social review data set
+        if data is None:
+            data = pd.read_csv(filename)  # load social review data set
 
         try:  # load user_name, different data sets may have different column name for user_name
             users = data.user_id.get_values().astype('str')

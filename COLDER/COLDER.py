@@ -117,17 +117,6 @@ class COLDER:
     """
     This class define a COLDER model
     """
-    def __init__(self):
-        self.uid = None  # the existing user id
-        self.iid = None  # the existing item id
-        self.classifier = None  # the fraud classifier
-        self.estimator = None  # the new user embedding estimator
-
-
-class Network:
-    """
-    This class define the network in COLDER model
-    """
     def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
         self.config = dict()  # the configure of the network
@@ -387,7 +376,7 @@ class Network:
 
     def predict(self, user, item, review, rating):
         item_embedding = self.item_embedding_model.predict(item)
-        # review = self.preprocess(review, token=self.config['review_tokenizer'])
+        review = self.preprocess(review, token=self.config['review_tokenizer'])
         review_embedding = self.review_embedding_model.predict(review)
         rating_embedding = self.rating_embedding_model.predict(rating)
         if user not in self.config['user_id']:

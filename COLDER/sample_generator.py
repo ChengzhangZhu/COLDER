@@ -6,12 +6,10 @@ Subsampling Frequent Data + Negative Sampling
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-22
 """
-from context_generator import social_implicit_path_generator, path2context
+from context_generator import path2context
 from graph import SocialGraph
 import numpy as np
-import pickle, cPickle
 from tqdm import tqdm
-import argparse
 
 def negative_sampling_prob(g=SocialGraph(), random_path=None):
     init_u = np.zeros(len(g.node_u))
@@ -314,62 +312,3 @@ def sample_generator(g=SocialGraph(), random_path=None):
                 else:
                     samples['context_u'].append(0)
     return shuffle_samples(samples)
-
-parser = argparse.ArgumentParser(description='Sample Generator')
-parser.add_argument('--data_sets', default='/data/qli1/Experiment/Qian/Fraud Detection/Yelp Shibuti Datasets/Data/yelp_Zip_data.csv', help='Specific Data Set',
-                    dest='data_sets', type=str)
-parser.add_argument('--minT', default=1, help='Set the minimun walk for each node, default is 1',
-                    dest='minT', type=int)
-parser.add_argument('--maxT', default=32, help='Set the maximun walk for each node, default is 32',
-                    dest='maxT', type=int)
-parser.add_argument('--max_length', default=5, help='Set the maximun walk length, default is 5',
-                    dest='max_length', type=int)
-parser.add_argument('--p', default=0.15, help='Set the walk stop probability at each step, default is 0.15',
-                    dest='p', type=float)
-parser.add_argument('--save_name', default='Zip', help='Set the save name of the generated samples,'
-                                                               'default is Zip', dest='save_name', type=str)
-parser.add_argument('--load_random_path', default='N', help='Load existing random path (Y/N)', dest='load_random_path', type=str)
-args = parser.parse_args()
-
-
-# ## For test
-# print('Building Graph...')
-# graph = SocialGraph()
-# graph.build('test.csv')
-# print('Saving Graph...')
-# pickle.dump(graph, open('{}_graph.pkl'.format('test'),'wb'))
-# print('Generating Random Path...')
-# random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
-# print('Saving Random Path...')
-# pickle.dump(random_path, open('{}_path.pkl'.format('test'),'wb'))
-# print('Construct Samples...')
-# samples = sample_generator(graph, random_path)
-# pickle.dump(samples,open('{}_sample.pkl'.format('test'),'wb'))
-
-
-def main():
-    if args.load_random_path != 'Y':
-        print('Building Graph...')
-        graph = SocialGraph()
-        graph.build(args.data_sets)
-        print('Saving Graph...')
-        pickle.dump(graph, open('{}_graph.pkl'.format(args.save_name),'wb'))
-        print('Generating Random Path...')
-        random_path = social_implicit_path_generator(graph, minT=args.minT, maxT=args.maxT, p=args.p, max_length=args.max_length)
-        print('Saving Random Path...')
-        pickle.dump(random_path, open('{}_path.pkl'.format(args.save_name),'wb'))
-    else:
-        print('Loading Graph...')
-        graph = pickle.load(open('{}_graph.pkl'.format(args.save_name),'rb'))
-        print('Loading Random Path...')
-        random_path = pickle.load(open('{}_path.pkl'.format(args.save_name), 'rb'))
-    print('Construct Samples...')
-    samples = sample_generator(graph, random_path)
-    # pickle.dump(samples,open('{}_sample.pkl'.format(args.save_name),'wb'))
-    cPickle.dump(samples, open('{}_sample.cpkl'.format(args.save_name), 'wb'))
-    print('Finish!')
-    return None
-
-
-if __name__ == "__main__":
-    main()

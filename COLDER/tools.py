@@ -6,8 +6,10 @@ Date: 2018-12-2
 """
 
 import pandas as pd
-from graph import clean_str
+from graph import clean_str, SocialGraph
 import re
+import cPickle
+from sample_generator import social_implicit_path_generator, sample_generator
 
 
 def split_train_test_data(file_name, train_begin_date, train_end_date, test_begin_date, test_end_date):
@@ -76,6 +78,28 @@ def generate_test_samples(data, cold_start=False):
     return test_data
 
 
-
-
-    
+def generate_train_test_samples(file_name,train_begin_date, train_end_date,
+                                test_begin_date, test_end_date,
+                                save_name='data', cold_start=False,
+                                minT=1, maxT=32, p=0.15, max_length=5):
+    print('Spliting Data...')
+    train_data, test_data = split_train_test_data(file_name, train_begin_date, train_end_date, test_begin_date, test_end_date)
+    print('Building Graph...')
+    g = SocialGraph()
+    g.build(data=train_data)
+    print('Saving Graph...')
+    cPickle.dump(g, open('{}_{}_{}_graph.cpkl'.format(save_name,train_begin_date,train_end_date), 'wb'))
+    print('Generating Random Path...')
+    random_path = social_implicit_path_generator(g, minT=minT, maxT=maxT, p=p, max_length=max_length)
+    print('Saving Random Path...')
+    cPickle.dump(random_path, open('{}_{}_{}_path.pkl'.format(save_name,train_begin_date,train_end_date), 'wb'))
+    print('Generating Training Data...')
+    train_data = sample_generator(g, random_path)
+    print('Saving Training Data...')
+    cPickle.dump(train_data, open('{}_{}_{}_train_data.cpkl'.format(save_name,train_begin_date,train_end_date), 'wb'))
+    print('Generating Testing Data...')
+    test_data = generate_test_samples(test_data, cold_start=cold_start)
+    print('Saving Testing Data...')
+    cPickle.dump(test_data, open('{}_{}_{}_test_data.cpkl'.format(save_name,test_begin_date,test_end_date),'wb'))
+    print('Finish!')
+    return True
