@@ -86,7 +86,7 @@ class FraudDetectionLoss(Layer):
 
     def call(self, inputs, **kwargs):
         y_pred = inputs[0]
-        y_true = (inputs[1]+1)/2
+        y_true = inputs[1]
         mask = inputs[2]
         loss = K.binary_crossentropy(y_true, y_pred)*mask # do not consider the negative samples in fraud detector
         return K.sum(loss/(K.sum(mask) + K.epsilon()))  # generate the mean loss of positive samples

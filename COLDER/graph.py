@@ -91,11 +91,16 @@ class SocialGraph:
 
         try:  # load label
             labels = data.label.get_values()
+            for i, l in enumerate(labels):
+                if l == '1' or l == 1:
+                    labels[i] = 0
+                else:
+                    labels[i] = 1
         except:
             labels = data.flagged.get_values()
             for i, l in enumerate(labels):
                 if l == 'N' or l == 'NR':
-                    labels[i] = -1
+                    labels[i] = 0
                 else:
                     labels[i] = 1
         labels = [int(float(i)) for i in labels]
