@@ -376,7 +376,7 @@ class COLDER:
 
     def predict(self, user, item, review, rating):
         item_embedding = self.item_embedding_model.predict(item)
-        review = self.preprocess(review, token=self.config['review_tokenizer'])
+        review, self.config['review_tokenizer'] = self.preprocess(review, token=self.config['review_tokenizer'])
         review_embedding = self.review_embedding_model.predict(review)
         rating_embedding = self.rating_embedding_model.predict(rating)
         if user not in self.config['user_id']:
