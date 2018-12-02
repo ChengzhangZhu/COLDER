@@ -107,7 +107,7 @@ class JointLoss(Layer):
         user_social_relation_loss = inputs[4]
         item_social_relation_loss = inputs[5]
         if alpha is None:
-            alpha = np.array([1, 1, 0.02, 0.1, 0.1, 0.1])
+            alpha = np.array([1, 1, 0.01, 0.05, 0.01, 0.01])
         loss = alpha[0]*fraud_detection_loss_1+ alpha[1]*fraud_detection_loss_2 + alpha[2]*behavior_success_loss_1+ alpha[3]*behavior_success_loss_2 + alpha[4]*user_social_relation_loss + alpha[5]*item_social_relation_loss
         self.add_loss(loss, inputs=inputs)
         return loss
