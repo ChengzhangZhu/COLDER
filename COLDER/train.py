@@ -6,7 +6,7 @@ import numpy as np
 from COLDER import COLDER
 from sklearn.metrics import classification_report
 
-parser = argparse.ArgumentParser(description='Sample Generator')
+parser = argparse.ArgumentParser(description='COLDER Model Training/Testing')
 parser.add_argument('--data_sets', default='/data/qli1/Experiment/Qian/Fraud Detection/Yelp Shibuti Datasets/Data/yelp_Zip_data.csv', help='Specific Data Set',
                     dest='data_sets', type=str)
 parser.add_argument('--minT', default=1, help='Set the minimun walk for each node, default is 1',
