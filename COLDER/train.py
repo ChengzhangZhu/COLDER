@@ -24,7 +24,7 @@ parser.add_argument('--training', default='N', help='Train COLDER model (Y/N)', 
 parser.add_argument('--trn_begin_date', default='2006-01-01', help='The begin date of training data', dest='trn_begin_date', type=str)
 parser.add_argument('--trn_end_date', default='2007-01-01', help='The end date of training data', dest='trn_end_date', type=str)
 parser.add_argument('--tst_begin_date', default='2007-01-02', help='The begin date of test data', dest='tst_begin_date', type=str)
-parser.add_argument('--tst_begin_date', default='2008-01-01', help='The end date of test data', dest='tst_end_date', type=str)
+parser.add_argument('--tst_end_date', default='2008-01-01', help='The end date of test data', dest='tst_end_date', type=str)
 parser.add_argument('--cold_start', default='N', help='Only cold start testing data (Y/N)', dest='cold_start', type=str)
 parser.add_argument('--epochs', default=1, help='The training epochs', dest='epochs', type=int)
 parser.add_argument('--load_model', default='N', help='Load existing COLDER model (Y/N)', dest='load_model', type=str)
