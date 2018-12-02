@@ -52,11 +52,11 @@ def generate_test_samples(data, cold_start=False):
         test_data['item'] = data.prod_id.get_values()
         test_data['review'] = data.review.get_values()
         test_data['label'] = data.label.get_values()
-        for i, l in enumerate(test_data['labels']):
+        for i, l in enumerate(test_data['label']):
             if l == '1' or l == 1:
-                test_data['labels'][i] = 0
+                test_data['label'][i] = 0
             else:
-                test_data['labels'][i] = 1
+                test_data['label'][i] = 1
     else:
         test_data['user'] = data.reviewerID.get_values()
         if 'hotelID' in data:
@@ -64,12 +64,12 @@ def generate_test_samples(data, cold_start=False):
         else:
             test_data['item'] = data.restaurantID.get_values()
         test_data['review'] = data.reviewContent.get_values()
-        test_data['labels'] = data.flagged.get_values()
-        for i, l in enumerate(test_data['labels']):
+        test_data['label'] = data.flagged.get_values()
+        for i, l in enumerate(test_data['label']):
             if l == 'N' or l == 'NR':
-                test_data['labels'][i] = 0
+                test_data['label'][i] = 0
             else:
-                test_data['labels'][i] = 1
+                test_data['label'][i] = 1
     test_data['rating'] = data.rating.get_values()
     test_data['user'] = [i for i in test_data['user']]
     test_data['item'] = [i for i in test_data['item']]
