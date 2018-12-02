@@ -107,8 +107,8 @@ class JointLoss(Layer):
         user_social_relation_loss = inputs[4]
         item_social_relation_loss = inputs[5]
         if alpha is None:
-            alpha = np.array([1,0.5,0.5,0.5])
-        loss = alpha[0]*(fraud_detection_loss_1+fraud_detection_loss_2) + alpha[1]*(behavior_success_loss_1+behavior_success_loss_2) + alpha[2]*user_social_relation_loss + alpha[3]*item_social_relation_loss
+            alpha = np.array([1, 1, 0.1, 0.5, 0.1, 0.1])
+        loss = alpha[0]*fraud_detection_loss_1+ alpha[1]*fraud_detection_loss_2 + alpha[2]*behavior_success_loss_1+ alpha[3]*behavior_success_loss_2 + alpha[4]*user_social_relation_loss + alpha[5]*item_social_relation_loss
         self.add_loss(loss, inputs=inputs)
         return loss
 
@@ -140,7 +140,7 @@ class COLDER:
             fraud_detector_nodes = [100, 100]
         self.config['fraud_detector_nodes'] = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
         if alpha is None:
-            alpha = [1, 0.05, 0.01, 0.01]
+            alpha = [1, 1, 0.01, 0.05, 0.01, 0.01]
         self.config['alpha'] = np.asarray(alpha)  # the coefficients of training losses
         self.config['loss_history'] = list()  # record the training loss in each epoch
     
