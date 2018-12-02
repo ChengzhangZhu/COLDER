@@ -7,6 +7,7 @@ Date: 2018-11-22
 import pandas as pd
 import re
 from tqdm import tqdm
+import numpy as np
 
 def clean_str(string):
     try:
@@ -66,8 +67,22 @@ class SocialGraph:
         self.label = dict()   # label dictionary, (user_id, item_id) --> label
 
     def name_to_id(self, user_name, item_name):
-        user_id = [self.user[i] for i in user_name]
-        item_id = [self.item[i] for i in item_name]
+        user_id = list()
+        item_id = list()
+        new_user_id = np.max(self.node_u.keys()) + 1
+        new_item_id = np.max(self.node_i.keys()) + 1
+        for name in user_name:
+            if name in self.user:
+                user_id.append(self.user[name])
+            else:
+                user_id.append(new_user_id)
+                new_user_id += 1
+        for name in item_name:
+            if name in self.item:
+                item_id.append(self.item[name])
+            else:
+                item_id.append(new_item_id)
+                new_item_id += 1
         return user_id, item_id
 
     def build(self, filename=None, data=None):
