@@ -9,7 +9,8 @@ import pandas as pd
 from graph import clean_str, SocialGraph
 import re
 import cPickle
-from sample_generator import social_implicit_path_generator, sample_generator
+from sample_generator import sample_generator
+from context_generator import social_implicit_path_generator
 
 
 def split_train_test_data(file_name, train_begin_date, train_end_date, test_begin_date, test_end_date):
