@@ -21,7 +21,7 @@ def split_train_test_data(file_name, train_begin_date, train_end_date, test_begi
         review_date = data['date'].get_values()  # extract review date
         users = data.user_id.get_values().astype('str')
     else:
-        data_re = re.compile(r'\d+\/\d+\/\+')
+        data_re = re.compile(r'\d+\/\d+\/\d+')
         data['date'] = data['date'].apply(lambda x: data_re.search(x).group())
         data['date'] = pd.to_datetime(data['date'])
         data = data.sort_values('date').reset_index(drop=True)  # sort data by date
