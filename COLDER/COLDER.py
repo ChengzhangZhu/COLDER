@@ -303,6 +303,7 @@ class COLDER:
         num_train = len(data['user1'])
         for i in range(epoch):
             print('{}-th epoch begin:'.format(i))
+            data = self.data_shuffle(data)
             num_iters = num_train/batch_size if num_train%batch_size == 0 else int(num_train/batch_size) + 1
             iters = tqdm(range(num_iters))
             train_loss = []
@@ -313,6 +314,14 @@ class COLDER:
                 iters.set_description('Training loss: {:.4} >>>>'.format(history.history['loss'][-1]))
             self.config['loss_history'].append(np.mean(train_loss))
             print('{}-th epoch ended, training loss {:.4}.'.format(i, np.mean(train_loss)))
+
+    def data_shuffle(self, data):
+        length = len(data['user1'])
+        index = np.r_[0:length]
+        np.random.shuffle(index)
+        for i in data:
+            data[i] = data[i][index]
+        return data
 
     def train_data_generator(self, data, g, j, batch_size, num_train):
         if j*batch_size + batch_size < num_train:
