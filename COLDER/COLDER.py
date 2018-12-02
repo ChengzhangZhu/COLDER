@@ -140,7 +140,7 @@ class COLDER:
             fraud_detector_nodes = [100, 100]
         self.config['fraud_detector_nodes'] = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
         if alpha is None:
-            alpha = [10, 0.5, 0.5, 0.5]
+            alpha = [10, 1, 0.5, 0.5]
         self.config['alpha'] = np.asarray(alpha)  # the coefficients of training losses
         self.config['loss_history'] = list()  # record the training loss in each epoch
     
