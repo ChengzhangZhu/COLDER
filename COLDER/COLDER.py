@@ -320,7 +320,7 @@ class COLDER:
         index = np.r_[0:length]
         np.random.shuffle(index)
         for i in data:
-            data[i] = data[i][index]
+            data[i] = [data[i][j] for j in index]
         return data
 
     def train_data_generator(self, data, g, j, batch_size, num_train):
