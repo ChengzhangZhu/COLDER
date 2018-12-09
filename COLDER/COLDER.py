@@ -117,7 +117,7 @@ class COLDER:
     """
     This class define a COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='CNN', filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
+    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='RNN', filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
         self.config = dict()  # the configure of the network
         self.config['user_id'] = None  # processed user id
