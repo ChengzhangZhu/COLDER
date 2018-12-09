@@ -5,7 +5,7 @@ It includes the COLDER structure, COLDER training, and COLDER prediction.
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-28
 """
-from keras.layers import Input, Embedding, GRU, Bidirectional, Dense, Conv1D, MaxPooling1D, Flatten, concatenate
+from keras.layers import Input, Embedding, GRU, AveragePooling1D, Activation, Bidirectional, Dense, Conv1D, MaxPooling1D, Flatten, concatenate
 from keras.models import Model
 import numpy as np
 from keras import backend as K
@@ -117,7 +117,7 @@ class COLDER:
     """
     This class define a COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='RNN', filter_size=2, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
+    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='CNN', filter_size=3, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
         self.config = dict()  # the configure of the network
         self.config['user_id'] = None  # processed user id
@@ -213,13 +213,14 @@ class COLDER:
                                       strides=1,
                                       activation='tanh',
                                       name='Conv_Layer')(word_embedding)
-            review_embedding = MaxPooling1D(pool_size=int(review_embedding.shape[1]),
+            review_embedding = AveragePooling1D(pool_size=int(review_embedding.shape[1]),
                                             strides=None,
                                             padding='valid')(review_embedding)
+            review_embedding = Activation('tanh')(review_embedding)
             review_embedding = Flatten()(review_embedding)
         else:
             review_embedding = Bidirectional(GRU(self.config['dim']))(word_embedding)
-            review_embedding = Dense(self.config['dim'], activation='relu')(review_embedding)
+            review_embedding = Dense(self.config['dim'], activation='tanh')(review_embedding)
         review_embedding = UnitNorm(name='Review_Embedding')(review_embedding)
         self.review_embedding_model = Model(inputs=review_input, outputs=review_embedding, name='review_embedding_model')
 
