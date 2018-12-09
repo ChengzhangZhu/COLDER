@@ -44,13 +44,13 @@ def split_train_test_data(file_name, train_begin_date, train_end_date, test_begi
     # Filter new items
     if 'prod_id' in train_data:
         existing_items = np.unique(train_data.prod_id.get_values())
-        test_data = test_data.loc[test_data.loc[:, 'prod_id'].isin(existing_items), :].get_values()
+        test_data = test_data.loc[test_data.loc[:, 'prod_id'].isin(existing_items), :].reset_index(drop=True)
     elif 'hotelID' in train_data:
         existing_items = np.unique(train_data.hotelID.get_values())
-        test_data = test_data.loc[test_data.loc[:, 'hotelID'].isin(existing_items), :].get_values()
+        test_data = test_data.loc[test_data.loc[:, 'hotelID'].isin(existing_items), :].reset_index(drop=True)
     else:
         existing_items = np.unique(train_data.restaurantID.get_values())
-        test_data = test_data.loc[test_data.loc[:, 'restaurantID'].isin(existing_items), :].get_values()
+        test_data = test_data.loc[test_data.loc[:, 'restaurantID'].isin(existing_items), :].reset_index(drop=True)
     return train_data, test_data
 
 
