@@ -6,6 +6,7 @@ Date: 2018-12-2
 """
 
 import pandas as pd
+import numpy as np
 from graph import clean_str, SocialGraph
 import re
 import cPickle
@@ -40,6 +41,16 @@ def split_train_test_data(file_name, train_begin_date, train_end_date, test_begi
     data['cold_start_indicator'] = cold_start_indicator
     train_data = data.loc[(data.date>= train_begin_date) & (data.date<=train_end_date)].reset_index(drop=True)
     test_data = data.loc[(data.date>=test_begin_date) & (data.date<=test_end_date)].reset_index(drop=True)
+    # Filter new items
+    if 'prod_id' in train_data:
+        existing_items = np.unique(train_data.prod_id.get_values())
+        test_data = test_data.loc[test_data.loc[:, 'prod_id'].isin(existing_items), :].index.get_values()
+    elif 'hotelID' in train_data:
+        existing_items = np.unique(train_data.hotelID.get_values())
+        test_data = test_data.loc[test_data.loc[:, 'hotelID'].isin(existing_items), :].index.get_values()
+    else:
+        existing_items = np.unique(train_data.restaurantID.get_values())
+        test_data = test_data.loc[test_data.loc[:, 'restaurantID'].isin(existing_items), :].index.get_values()
     return train_data, test_data
 
 
