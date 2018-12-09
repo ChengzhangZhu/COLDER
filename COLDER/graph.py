@@ -72,15 +72,18 @@ class SocialGraph:
         new_user_id = np.max(self.node_u.keys()) + 1
         new_item_id = np.max(self.node_i.keys()) + 1
         for name in user_name:
+            name = str(name)
             if name in self.user:
                 user_id.append(self.user[name])
             else:
                 user_id.append(new_user_id)
                 new_user_id += 1
         for name in item_name:
+            name = str(name)
             if name in self.item:
                 item_id.append(self.item[name])
             else:
+                print('item {} is not exist'.format(name))
                 item_id.append(new_item_id)
                 new_item_id += 1
         return user_id, item_id

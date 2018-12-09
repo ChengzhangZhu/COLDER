@@ -2,6 +2,7 @@ from tools import generate_train_test_samples
 import argparse
 import cPickle
 from graph import SocialGraph
+from tqdm import tqdm
 import numpy as np
 from COLDER import COLDER
 from sklearn.metrics import classification_report
@@ -67,7 +68,13 @@ def main():
         test_review = np.asarray(test_data['review'])
         test_rating = np.asarray(test_data['rating'])
         test_label = test_data['label']
-        pred_label = colder.predict(test_u, test_i, test_review, test_rating)
+        pred_label = list()
+        for index in tqdm(range(len(test_label))):
+            try:
+                pred_label.append(colder.predict(np.asarray([test_u[index]]), np.asarray([test_i[index]]), np.asarray([test_review[index]]), np.asarray([test_rating[index]]))[0])
+            except:
+                print('item {} does not exist'.format(g.item_reverse[test_data['item'][index]]))
+                pred_label.append(0)
         for i,l in enumerate(pred_label):
             if l<0.5:
                 pred_label[i] = 0
