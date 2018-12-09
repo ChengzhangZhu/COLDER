@@ -74,7 +74,10 @@ def main():
             else:
                 pred_label[i] = 1
         print(classification_report(test_label, pred_label))
-        f = open('{}_{}_{}_{}_{}_result.txt'.format(args.save_name, args.trn_begin_date, args.trn_end_date, args.tst_begin_date, args.tst_end_date), 'w+')
+        if not cold_start:
+            f = open('{}_{}_{}_{}_{}_result.txt'.format(args.save_name, args.trn_begin_date, args.trn_end_date, args.tst_begin_date, args.tst_end_date), 'w+')
+        else:
+            f = open('Cold_{}_{}_{}_{}_{}_result.txt'.format(args.save_name, args.trn_begin_date, args.trn_end_date, args.tst_begin_date, args.tst_end_date), 'w+')
         print >> f, classification_report(test_label, pred_label)
         f.close()
         print('Testing Finish!')
