@@ -30,6 +30,7 @@ parser.add_argument('--cold_start', default='N', help='Only cold start testing d
 parser.add_argument('--epochs', default=1, help='The training epochs', dest='epochs', type=int)
 parser.add_argument('--load_model', default='N', help='Load existing COLDER model (Y/N)', dest='load_model', type=str)
 parser.add_argument('--testing', default='N', help='Test COLDER model (Y/N)', dest='testing', type=str)
+parser.add_argument('--paras', default='1,0.01,0.01', help='The coefficient of training objective', dest='paras', type=str)
 
 args = parser.parse_args()
 
@@ -48,18 +49,20 @@ def main():
         print('Begin Training Process...')
         g = cPickle.load(open('{}_{}_{}_graph.cpkl'.format(args.save_name,args.trn_begin_date,args.trn_end_date),'rb'))
         train_data = cPickle.load(open('{}_{}_{}_train_data.cpkl'.format(args.save_name,args.trn_begin_date,args.trn_end_date),'rb'))
-        colder = COLDER()
+        paras = [float(i) for i in args.paras.split(',')]
+        alpha = [paras[0], paras[0], paras[1], paras[1]*5, paras[2], paras[2]]
+        colder = COLDER(alpha=alpha)
         if args.load_model == 'Y' or args.load_model == 'y':
-            colder.load(name=args.save_name)
+            colder.load(name='{}_{}_{}_{}_{}'.format(args.save_name,args.save_name,args.trn_begin_date,args.trn_end_date,args.paras))
         colder.fit(train_data, g=g, epoch=args.epochs)
         print('Saving Model...')
-        colder.save(name=args.save_name)
+        colder.save(name='{}_{}_{}_{}_{}'.format(args.save_name,args.save_name,args.trn_begin_date,args.trn_end_date,args.paras))
         print('Finish!')
 
     if args.testing == 'Y' or args.testing == 'y':
         print('Begin Testing Process...')
         colder = COLDER()
-        colder.load(name=args.save_name)
+        colder.load(name='{}_{}_{}_{}_{}'.format(args.save_name,args.save_name,args.trn_begin_date,args.trn_end_date,args.paras))
         test_data = cPickle.load(open('{}_{}_{}_test_data.cpkl'.format(args.save_name,args.tst_begin_date,args.tst_end_date),'rb'))
         g = cPickle.load(open('{}_{}_{}_graph.cpkl'.format(args.save_name, args.trn_begin_date, args.trn_end_date), 'rb'))
         test_data['user'], test_data['item'] = g.name_to_id(test_data['user'], test_data['item'])
