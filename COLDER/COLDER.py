@@ -141,7 +141,7 @@ class COLDER:
             fraud_detector_nodes = [100, 100]
         self.config['fraud_detector_nodes'] = fraud_detector_nodes  # the layer structure and nodes in the fraud detector
         if alpha is None:
-            alpha = [1, 1, 0.01, 0.05, 0.01, 0.01]
+            alpha = [1, 1, 0.1, 0.5, 0.05, 0.05]
         self.config['alpha'] = np.asarray(alpha)  # the coefficients of training losses
         self.config['loss_history'] = list()  # record the training loss in each epoch
     
@@ -218,6 +218,7 @@ class COLDER:
                                             padding='valid')(review_embedding)
             review_embedding = Activation('tanh')(review_embedding)
             review_embedding = Flatten()(review_embedding)
+            review_embedding = Dense(self.config['dim'],activation='relu')(review_embedding)
         else:
             review_embedding = Bidirectional(GRU(self.config['dim']))(word_embedding)
             review_embedding = Dense(self.config['dim'], activation='tanh')(review_embedding)

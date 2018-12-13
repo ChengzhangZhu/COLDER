@@ -30,7 +30,7 @@ parser.add_argument('--cold_start', default='N', help='Only cold start testing d
 parser.add_argument('--epochs', default=1, help='The training epochs', dest='epochs', type=int)
 parser.add_argument('--load_model', default='N', help='Load existing COLDER model (Y/N)', dest='load_model', type=str)
 parser.add_argument('--testing', default='N', help='Test COLDER model (Y/N)', dest='testing', type=str)
-parser.add_argument('--paras', default='1,0.01,0.01', help='The coefficient of training objective', dest='paras', type=str)
+parser.add_argument('--paras', default='1,0.1,0.05', help='The coefficient of training objective', dest='paras', type=str)
 
 args = parser.parse_args()
 
