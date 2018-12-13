@@ -7,6 +7,7 @@ Date: 2018-11-28
 """
 from keras.layers import Input, Embedding, GRU, AveragePooling1D, Activation, Bidirectional, Dense, Conv1D, MaxPooling1D, Flatten, concatenate
 from keras.models import Model
+from keras import optimizers
 import numpy as np
 from keras import backend as K
 from keras.engine.topology import Layer
@@ -117,9 +118,10 @@ class COLDER:
     """
     This class define a COLDER model
     """
-    def __init__(self, dim=100, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='CNN', filter_size=3, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
+    def __init__(self, dim=100, lr=0.001, fraud_detector_nodes=None, alpha=None, rating_input_dim=5, max_len=200, review_embedder='CNN', filter_size=3, num_filters=100, pre_word_embedding_dim=100, pre_word_embedding_file='glove.6B.100d.txt', max_num_words=100000):
         self.fraud_detector = None  # the fraud detector network
         self.config = dict()  # the configure of the network
+        self.config['lr'] = lr  # learning rate
         self.config['user_id'] = None  # processed user id
         self.config['item_id'] = None  # processed item id
         self.config['review_tokenizer'] = None  # review tokenizer
@@ -286,6 +288,7 @@ class COLDER:
                                          item_context_input,
                                          behavior_success_input_2],
                                  outputs=loss)
+        adam = optimizers.Adam(lr=self.config['lr'])
         self.joint_model.compile(optimizer='adam', loss=None)
 
     def fit(self, data, g=SocialGraph(), epoch=5, batch_size=32):

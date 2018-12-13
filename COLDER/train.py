@@ -31,6 +31,7 @@ parser.add_argument('--epochs', default=1, help='The training epochs', dest='epo
 parser.add_argument('--load_model', default='N', help='Load existing COLDER model (Y/N)', dest='load_model', type=str)
 parser.add_argument('--testing', default='N', help='Test COLDER model (Y/N)', dest='testing', type=str)
 parser.add_argument('--paras', default='1,0.1,0.05', help='The coefficient of training objective', dest='paras', type=str)
+parser.add_argument('--lr', default='0.001', help='Learning rate', dest='lr', type=float)
 
 args = parser.parse_args()
 
@@ -51,7 +52,7 @@ def main():
         train_data = cPickle.load(open('{}_{}_{}_train_data.cpkl'.format(args.save_name,args.trn_begin_date,args.trn_end_date),'rb'))
         paras = [float(i) for i in args.paras.split(',')]
         alpha = [paras[0], paras[0], paras[1], paras[1]*5, paras[2], paras[2]]
-        colder = COLDER(alpha=alpha)
+        colder = COLDER(alpha=alpha, lr=args.lr)
         if args.load_model == 'Y' or args.load_model == 'y':
             colder.load(name='{}_{}_{}_{}_{}'.format(args.save_name,args.save_name,args.trn_begin_date,args.trn_end_date,args.paras))
         colder.fit(train_data, g=g, epoch=args.epochs)
