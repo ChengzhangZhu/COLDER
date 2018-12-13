@@ -5,7 +5,7 @@ It includes the COLDER structure, COLDER training, and COLDER prediction.
 Author: Qian Li <linda.zhu.china@gmail.com>
 Date: 2018-11-28
 """
-from keras.layers import Input, Embedding, GRU, AveragePooling1D, Activation, Bidirectional, Dense, Conv1D, MaxPooling1D, Flatten, concatenate
+from keras.layers import Input, Embedding, GRU, AveragePooling1D, Activation, Bidirectional, Dense, Conv1D, BatchNormalization, Flatten, concatenate
 from keras.models import Model
 from keras import optimizers
 import numpy as np
@@ -251,9 +251,9 @@ class COLDER:
 
         # Fraud detector
         fraud_input = Input(shape=(4*self.config['dim'],), name='fraud_detector_input')
-        fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][0], activation='relu')(fraud_input)
+        fraud_hidden_output = BatchNormalization()(Dense(self.config['fraud_detector_nodes'][0], activation='relu')(fraud_input))
         for i in range(len(self.config['fraud_detector_nodes'])-1):
-            fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][i+1], activation='relu')(fraud_hidden_output)
+            fraud_hidden_output = BatchNormalization()(Dense(self.config['fraud_detector_nodes'][i+1], activation='relu')(fraud_hidden_output))
         fraud_output = Dense(1, activation='sigmoid', name='fraud_detector_output')(fraud_hidden_output)
         self.fraud_detector = Model(inputs=fraud_input,outputs=fraud_output, name='fraud_detector')
 
