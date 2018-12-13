@@ -288,7 +288,7 @@ class COLDER:
                                          item_context_input,
                                          behavior_success_input_2],
                                  outputs=loss)
-        adam = optimizers.Adam(lr=self.config['lr'])
+        adam = optimizers.Adam(lr=self.config['lr'], clipnorm=1.)
         self.joint_model.compile(optimizer='adam', loss=None)
 
     def fit(self, data, g=SocialGraph(), epoch=5, batch_size=32):
