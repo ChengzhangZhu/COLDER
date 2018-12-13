@@ -166,6 +166,7 @@ class COLDER:
         rating_input = Input(shape=(1,), dtype='int32')
         rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Rating_Init_Embedding')(rating_input)
         rating_embedding = Flatten()(rating_embedding)
+        rating_embedding = Activation('relu')(rating_embedding)
         rating_embedding = UnitNorm(name='Rating_Embedding')(rating_embedding)
         self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding, name='rating_embedding_model')
 
@@ -173,6 +174,7 @@ class COLDER:
         user_input = Input(shape=(1,), dtype='int32')
         user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='User_Init_Embedding')(user_input)
         user_embedding = Flatten()(user_embedding)
+        user_embedding = Activation('relu')(user_embedding)
         user_embedding = UnitNorm(name='User_Embedding')(user_embedding)
         self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding, name='user_embedding_model')
 
@@ -180,6 +182,7 @@ class COLDER:
         item_input = Input(shape=(1,), dtype='int32')
         item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Item_Init_Embedding')(item_input)
         item_embedding = Flatten()(item_embedding)
+        item_embedding = Activation('relu')(item_embedding)
         item_embedding = UnitNorm(name='Item_Embedding')(item_embedding)
         self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding, name='item_embedding_model')
 
