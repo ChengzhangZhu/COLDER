@@ -54,7 +54,7 @@ class BehaviorSuccessLoss(Layer):
         rating = inputs[3]
         label = inputs[4]*2 - 1
         b = user + item + review + rating #Eq (2)
-        s = 2*1.0/(1 + K.clip(K.exp(-K.l2_normalize(b)*label), K.epsilon(), 1)) - 1
+        s = 2*1.0/(1 + K.exp(-K.l2_normalize(b)*label)) - 1
         s = K.clip(s, K.epsilon(), 1)
         loss = K.mean(-K.log(s))
         return loss
@@ -72,7 +72,7 @@ class SocialRelationLoss(Layer):
         object_2 = inputs[1]
         label = inputs[2]*2 - 1
         similarity = K.sum(object_1*object_2, axis=-1, keepdims=True)
-        s = 2*1.0/(1 + K.clip(K.exp(-similarity*label), K.epsilon(), 1)) - 1
+        s = 2*1.0/(1 +K.exp(-similarity*label)) - 1
         s = K.clip(s, K.epsilon(), 1)
         loss = K.mean(-K.log(s))
         return loss
@@ -168,7 +168,7 @@ class COLDER:
         rating_input = Input(shape=(1,), dtype='int32')
         rating_embedding = Embedding(input_dim=rating_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Rating_Init_Embedding')(rating_input)
         rating_embedding = Flatten()(rating_embedding)
-        rating_embedding = Activation('relu')(rating_embedding)
+        # rating_embedding = Activation('relu')(rating_embedding)
         rating_embedding = UnitNorm(name='Rating_Embedding')(rating_embedding)
         self.rating_embedding_model = Model(inputs=rating_input, outputs=rating_embedding, name='rating_embedding_model')
 
@@ -176,7 +176,7 @@ class COLDER:
         user_input = Input(shape=(1,), dtype='int32')
         user_embedding = Embedding(input_dim=user_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='User_Init_Embedding')(user_input)
         user_embedding = Flatten()(user_embedding)
-        user_embedding = Activation('relu')(user_embedding)
+        # user_embedding = Activation('relu')(user_embedding)
         user_embedding = UnitNorm(name='User_Embedding')(user_embedding)
         self.user_embedding_model = Model(inputs=user_input, outputs=user_embedding, name='user_embedding_model')
 
@@ -184,7 +184,7 @@ class COLDER:
         item_input = Input(shape=(1,), dtype='int32')
         item_embedding = Embedding(input_dim=item_input_dim+1, output_dim=self.config['dim'], embeddings_constraint=unit_norm(), name='Item_Init_Embedding')(item_input)
         item_embedding = Flatten()(item_embedding)
-        item_embedding = Activation('relu')(item_embedding)
+        # item_embedding = Activation('relu')(item_embedding)
         item_embedding = UnitNorm(name='Item_Embedding')(item_embedding)
         self.item_embedding_model = Model(inputs=item_input, outputs=item_embedding, name='item_embedding_model')
 
@@ -223,7 +223,7 @@ class COLDER:
                                             padding='valid')(review_embedding)
             review_embedding = Activation('tanh')(review_embedding)
             review_embedding = Flatten()(review_embedding)
-            review_embedding = Dense(self.config['dim'],activation='relu')(review_embedding)
+            # review_embedding = Dense(self.config['dim'],activation='relu')(review_embedding)
         else:
             review_embedding = Bidirectional(GRU(self.config['dim']))(word_embedding)
             review_embedding = Dense(self.config['dim'], activation='tanh')(review_embedding)
@@ -251,9 +251,9 @@ class COLDER:
 
         # Fraud detector
         fraud_input = Input(shape=(4*self.config['dim'],), name='fraud_detector_input')
-        fraud_hidden_output = BatchNormalization()(Dense(self.config['fraud_detector_nodes'][0], activation='relu')(fraud_input))
+        fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][0], activation='relu')(fraud_input)
         for i in range(len(self.config['fraud_detector_nodes'])-1):
-            fraud_hidden_output = BatchNormalization()(Dense(self.config['fraud_detector_nodes'][i+1], activation='relu')(fraud_hidden_output))
+            fraud_hidden_output = Dense(self.config['fraud_detector_nodes'][i+1], activation='relu')(fraud_hidden_output)
         fraud_output = Dense(1, activation='sigmoid', name='fraud_detector_output')(fraud_hidden_output)
         self.fraud_detector = Model(inputs=fraud_input,outputs=fraud_output, name='fraud_detector')
 
@@ -288,7 +288,7 @@ class COLDER:
                                          item_context_input,
                                          behavior_success_input_2],
                                  outputs=loss)
-        adam = optimizers.Adam(lr=self.config['lr'], clipnorm=1., clipvalue=0.5)
+        adam = optimizers.Adam(lr=self.config['lr'])
         self.joint_model.compile(optimizer='adam', loss=None)
 
     def fit(self, data, g=SocialGraph(), epoch=5, batch_size=32):
